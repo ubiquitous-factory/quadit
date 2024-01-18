@@ -1,7 +1,12 @@
 [package]
 name = "quadit"
 version = "0.0.1"
+description = "A gitops tool to deploy systemd managed containers on linux using quadlets"
+authors = ["Anton Whalley <antonwhalley@yahoo.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ubiquitous-factory/quadit"
 edition = "2021"
+include = ["src/**/*", "LICENSE-*", "*.md"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
