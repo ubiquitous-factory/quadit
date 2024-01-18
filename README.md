@@ -10,6 +10,10 @@ It is written in rust to minimise the overall footprint and improve the power co
 
 For more detail on quadlet see [this article](https://www.redhat.com/sysadmin/quadlet-podman). 
 
+[![Build](https://github.com/ubiquitous-factory/quadit/actions/workflows/build.yml/badge.svg)](https://github.com/ubiquitous-factory/quadit/actions/workflows/build.yml)
+[![crates.io](https://img.shields.io/crates/v/quadit.svg)](https://crates.io/crates/quadit)
+[![dependency status](https://deps.rs/repo/github/ubiquitous-factory/quadit/status.svg)](https://deps.rs/repo/github/ubiquitous-factory/quadit)
+
 ## feature
 
 `quadit` is a very opinionated reimplementation of the fantastic [fetchit](https://github.com/containers/fetchit) podman management system please evaluate the following matrix to understand which one would better suit your needs.
