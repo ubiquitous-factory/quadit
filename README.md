@@ -22,7 +22,7 @@ For more detail on quadlet see [this article](https://www.redhat.com/sysadmin/qu
 |raw|:green_circle:|:red_circle:|Not a quadit goal|
 |root systemd|:green_circle:|:red_circle:|Not a quadit goal|
 |user systemd|:green_circle:|:red_circle:|Not a quadit goal|
-|auto-update|:green_circle:|:green_circle:|quadit is targetting auto configuration|
+|auto-update|:green_circle:|:green_circle:|quadit is targeting auto configuration|
 |root quadlet|:red_circle:|:red_circle:|Currently not a quadit goal but open to re-evaluation|
 |user quadlet|:red_circle:|:green_circle:|Not available in fetchit [See fetchit issue](https://github.com/containers/fetchit/issues/311)|
 |systemd stop|:red_circle:|:green_circle:|[Code exists](https://github.com/containers/fetchit/blob/main/method_containers/systemd/systemd-script#L51) in fetchit but not surfaced in config|
