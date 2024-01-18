@@ -34,7 +34,7 @@ targetConfigs:
   start: false
 "#;
 
-        let deser: QuaditConfig = serde_yaml::from_str(&test_yaml).unwrap();
+        let deser: QuaditConfig = serde_yaml::from_str(test_yaml).unwrap();
         println!("{:#?}", deser);
         assert_eq!(
             deser.target_configs[0].url,
