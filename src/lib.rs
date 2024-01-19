@@ -1,6 +1,10 @@
-mod config_reload;
-mod git_config;
-mod quadit_config;
+pub mod config_git;
+pub mod config_quadit;
+pub mod config_reload;
+pub mod file_manager;
+pub mod git_manager;
+pub mod quadit_manager;
+pub mod reload_manager;
 
 use env_logger::fmt::Formatter;
 use log::Record;

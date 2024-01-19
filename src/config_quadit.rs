@@ -1,27 +1,27 @@
 use serde::{Deserialize, Serialize};
 
+use crate::config_git::ConfigGit;
 use crate::config_reload::ConfigReload;
-use crate::git_config::GitConfig;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct QuaditConfig {
-    pub target_configs: Vec<GitConfig>,
+pub struct ConfigQuadit {
+    pub target_configs: Vec<ConfigGit>,
     pub config_reload: Option<ConfigReload>,
 }
 
-impl QuaditConfig {
-    // fn load() -> Result<GitConfig, Error> {
-
-    // }
+impl ConfigQuadit {
+    pub fn from_yaml(yaml: String) -> Result<ConfigQuadit, serde_yaml::Error> {
+        serde_yaml::from_str::<ConfigQuadit>(&yaml)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::quadit_config::QuaditConfig;
+    use crate::config_quadit::ConfigQuadit;
 
     #[test]
-    fn serialize_quaditconfig() {
+    fn test_quaditconfig_from_string() {
         let test_yaml = r#"
 configReload:
   configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
@@ -33,8 +33,7 @@ targetConfigs:
   schedule: "*/1 * * * *"
   start: false
 "#;
-
-        let deser: QuaditConfig = serde_yaml::from_str(test_yaml).unwrap();
+        let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
         println!("{:#?}", deser);
         assert_eq!(
             deser.target_configs[0].url,

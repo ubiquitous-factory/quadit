@@ -1,7 +1,13 @@
-use anyhow::Result;
-use log::{error, info, warn};
+use std::time::Duration;
 
-fn main() -> Result<()> {
+use anyhow::Result;
+use log::info;
+use quadit::{file_manager::FileManager, quadit_manager::QuaditManager};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    dotenvy::dotenv()?;
+
     env_logger::builder()
         .format(quadit::log_formatter)
         .filter_level(log::LevelFilter::Info)
@@ -13,8 +19,10 @@ fn main() -> Result<()> {
         .target(env_logger::Target::Stdout)
         .init();
 
-    warn!("oh oh");
-    info!("just so you know");
-    error!("broken");
+    let service_conf_location = "/opt/mount/config.yaml".to_string();
+    info!("loading configuration from {}", service_conf_location);
+    let serviceconf = FileManager::readconfig(service_conf_location)?;
+    QuaditManager::from_yaml(serviceconf).await?;
+    tokio::time::sleep(Duration::from_secs(100)).await;
     Ok(())
 }

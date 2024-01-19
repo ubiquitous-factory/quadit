@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GitConfig {
+pub struct ConfigGit {
     pub url: String,
     pub target_path: String,
     pub branch: String,

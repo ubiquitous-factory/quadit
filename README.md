@@ -24,18 +24,17 @@ Please evaluate the following matrix to understand which one would better suit y
 
 ||fetchit|quadit|notes|
 |---|---|---|---|
-|simple file transfer|:green_circle:|:red_circle:|May be considered as a feature if required|
-|ansible|:green_circle:|:red_circle:|Not a quadit goal|
-|kube|:green_circle:|:red_circle:|Not a quadit goal|
-|raw|:green_circle:|:red_circle:|Not a quadit goal|
-|root systemd|:green_circle:|:red_circle:|Not a quadit goal|
-|user systemd|:green_circle:|:red_circle:|Not a quadit goal|
-|auto-update|:green_circle:|:green_circle:|quadit is targeting auto configuration|
-|root quadlet|:red_circle:|:red_circle:|Currently not a quadit goal but open to re-evaluation|
-|user quadlet|:red_circle:|:green_circle:|Not available in fetchit [See fetchit issue](https://github.com/containers/fetchit/issues/311)|
-|systemd stop|:red_circle:|:green_circle:|[Code exists](https://github.com/containers/fetchit/blob/main/method_containers/systemd/systemd-script#L51) in fetchit but not surfaced in config|
-|systemd start|:red_circle:|:green_circle:|Not implemented in `fetchit`|
-
+|inbuilt CLI|<div class="redcircle"></div>|<div class="greencircle"></div>|Main design goal to improve devops experience|
+|user quadlet|<div class="redcircle"></div>|<div class="greencircle"></div>|Not available in fetchit [See fetchit issue](https://github.com/containers/fetchit/issues/311)|
+|root quadlet|<div class="redcircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
+|systemd stop|<div class="redcircle"></div>|<div class="greencircle"></div>|[Code exists](https://github.com/containers/fetchit/blob/main/method_containers/systemd/systemd-script#L51) in fetchit but not surfaced in config|
+|systemd start|<div class="redcircle"></div>|<div class="greencircle"></div>|Not implemented in `fetchit`|
+|auto-update|<div class="greencircle"></div>|<div class="greencircle"></div>|quadit is targeting auto configuration|
+|simple file transfer|<div class="greencircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
+|ansible|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
+|kube|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
+|raw|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
+|plain systemd files|<div class="greencircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
 
 
 ## install
@@ -74,3 +73,21 @@ conditions.
 If you want to contribute to `quadit`, please read our [CONTRIBUTING notes].
 
 [CONTRIBUTING notes]: CONTRIBUTING.md
+
+
+<style>
+    .redcircle {
+     width: 10px; 
+            height: 10px; 
+            background-color: red; 
+            border-radius: 50%; 
+            margin: auto;
+            } 
+    .greencircle {
+width: 10px; 
+            height: 10px; 
+            background-color: green; 
+            border-radius: 50%; 
+            margin: auto;
+    } 
+    </style>
