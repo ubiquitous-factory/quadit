@@ -1,12 +1,15 @@
 use std::time::Duration;
 
 use anyhow::Result;
-use log::info;
-use quadit::{file_manager::FileManager, quadit_manager::QuaditManager};
+
+use clap::Parser;
+use quadit::{cli::QuaditCli, file_manager::FileManager, quadit_manager::QuaditManager};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv()?;
+    if dotenvy::dotenv().is_ok() {
+        println!("Using .env")
+    }
 
     env_logger::builder()
         .format(quadit::log_formatter)
@@ -19,10 +22,18 @@ async fn main() -> Result<()> {
         .target(env_logger::Target::Stdout)
         .init();
 
-    let service_conf_location = "/opt/mount/config.yaml".to_string();
-    info!("loading configuration from {}", service_conf_location);
-    let serviceconf = FileManager::readconfig(service_conf_location)?;
-    QuaditManager::from_yaml(serviceconf).await?;
+    let cli = QuaditCli::parse();
+    //println!("{:?}", args.manifest_path);
+    // if args.version {}
+    match cli.debug {
+        0 => println!("Debug mode is off"),
+        1 => println!("Debug mode is kind of on"),
+        2 => println!("Debug mode is on"),
+        _ => println!("Don't be crazy"),
+    }
+    let serviceconf = FileManager::load_quadit_config()?;
+    let quadit = QuaditManager::from_yaml(serviceconf).await?;
+    quadit.start().await?;
     tokio::time::sleep(Duration::from_secs(100)).await;
     Ok(())
 }

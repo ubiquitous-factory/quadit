@@ -1,3 +1,4 @@
+use log::info;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::config_reload::ConfigReload;
@@ -33,5 +34,10 @@ impl ReloadManager {
             })?)
             .await?;
         Ok(reload_manager)
+    }
+
+    pub async fn start(&self) -> Result<(), JobSchedulerError> {
+        info!("Starting schedule for all git configs");
+        self.scheduler.start().await
     }
 }
