@@ -30,6 +30,8 @@ async fn try_main() -> Result<()> {
         .init();
 
     // Run cli
+
+    // more comments
     #[cfg(feature = "cli")]
     QuaditCli::run().await?;
 
