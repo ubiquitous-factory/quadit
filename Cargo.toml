@@ -33,3 +33,7 @@ name = "quadit"
 
 [profile.release]
 lto = true
+
+[features]
+default = ["cli"]
+cli = []

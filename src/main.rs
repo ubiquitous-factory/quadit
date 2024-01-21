@@ -1,9 +1,10 @@
-use std::time::Duration;
-
 use anyhow::Result;
 
-use clap::Parser;
-use quadit::{cli::QuaditCli, file_manager::FileManager, quadit_manager::QuaditManager};
+#[cfg(feature = "cli")]
+use quadit::cli::QuaditCli;
+
+#[cfg(not(feature = "cli"))]
+use quadit::service_manager::ServiceManager;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -22,18 +23,31 @@ async fn main() -> Result<()> {
         .target(env_logger::Target::Stdout)
         .init();
 
-    let cli = QuaditCli::parse();
-    //println!("{:?}", args.manifest_path);
-    // if args.version {}
-    match cli.debug {
-        0 => println!("Debug mode is off"),
-        1 => println!("Debug mode is kind of on"),
-        2 => println!("Debug mode is on"),
-        _ => println!("Don't be crazy"),
+    #[cfg(feature = "cli")]
+    let _ = QuaditCli::run().await;
+
+    #[cfg(not(feature = "cli"))]
+    svc().await?;
+
+    Ok(())
+}
+
+#[cfg(not(feature = "cli"))]
+async fn svc() -> Result<(), anyhow::Error> {
+    use std::env;
+
+    if env::args()
+        .filter(|a| a == &"--version".to_string() || a == &"--help".to_string())
+        .collect::<Vec<_>>()
+        .len()
+        > 0
+    {
+        const VERSION: &str = env!("CARGO_PKG_VERSION");
+        println!("quadit Server Edition v{}", VERSION);
+        println!("This process accepts no arguments.");
+        println!("See documentation https://github.com/ubiquitous-factory/quadit/");
+    } else {
+        ServiceManager::run().await?;
     }
-    let serviceconf = FileManager::load_quadit_config()?;
-    let quadit = QuaditManager::from_yaml(serviceconf).await?;
-    quadit.start().await?;
-    tokio::time::sleep(Duration::from_secs(100)).await;
     Ok(())
 }

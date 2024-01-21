@@ -6,6 +6,7 @@ pub mod file_manager;
 pub mod git_manager;
 pub mod quadit_manager;
 pub mod reload_manager;
+pub mod service_manager;
 
 use env_logger::fmt::Formatter;
 use log::Record;
