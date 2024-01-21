@@ -60,7 +60,7 @@ impl GitManager {
                         uuid, this_conf.url, this_conf.branch, this_conf.target_path
                     );
                     let job_path = format!("jobs/{}", uuid); 
-                    let gitsync = gitsync::GitSync {
+                    let gitsync = quaditsync::GitSync {
                         repo: this_conf.url.clone(),
                         dir: job_path.into(),
                         ..Default::default()
@@ -101,7 +101,7 @@ impl GitManager {
                                 uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path
                             );
                             let job_path = format!("jobs/{}", uuid); 
-                            let gitsync = gitsync::GitSync {
+                            let gitsync = quaditsync::GitSync {
                                 repo: internal_gc.url.clone(),
                                 dir: job_path.into(),
                                 ..Default::default()

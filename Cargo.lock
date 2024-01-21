@@ -252,15 +252,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gitsync"
-version = "0.1.9"
-source = "git+https://github.com/no9/gitsync.git#79b2dc4de4bf1d6d952fd54083ce633a76703341"
-dependencies = [
- "git2",
- "log",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -549,13 +540,23 @@ dependencies = [
  "clap",
  "dotenvy",
  "env_logger",
- "gitsync",
  "log",
+ "quaditsync",
  "serde",
  "serde_yaml",
  "tokio",
  "tokio-cron-scheduler",
  "uuid",
+]
+
+[[package]]
+name = "quaditsync"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26fb97665f3668282993279fed7f13a5341a62897e62dfc7c0a778d086c4dfce"
+dependencies = [
+ "git2",
+ "log",
 ]
 
 [[package]]
