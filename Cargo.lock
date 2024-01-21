@@ -254,6 +254,7 @@ dependencies = [
 [[package]]
 name = "gitsync"
 version = "0.1.9"
+source = "git+https://github.com/no9/gitsync.git#79b2dc4de4bf1d6d952fd54083ce633a76703341"
 dependencies = [
  "git2",
  "log",
