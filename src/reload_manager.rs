@@ -1,4 +1,4 @@
-use log::info;
+use log::{error, info};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::config_reload::ConfigReload;
@@ -22,13 +22,13 @@ impl ReloadManager {
             .scheduler
             .add(Job::new_async(conf.schedule.as_str(), |uuid, mut l| {
                 Box::pin(async move {
-                    println!("I run async every 7 seconds");
+                    info!("Added Reload Job");
 
                     // Query the next execution time for this job
                     let next_tick = l.next_tick_for_job(uuid).await;
                     match next_tick {
-                        Ok(Some(ts)) => println!("Next time for 7s job is {:?}", ts),
-                        _ => println!("Could not get next tick for 7s job"),
+                        Ok(Some(ts)) => info!("Next time for Reload Job is {:?}", ts),
+                        _ => error!("Could not get next tick for Reload Job"),
                     }
                 })
             })?)
@@ -37,7 +37,7 @@ impl ReloadManager {
     }
 
     pub async fn start(&self) -> Result<(), JobSchedulerError> {
-        info!("Starting schedule for all git configs");
+        info!("Starting schedule for reload config");
         self.scheduler.start().await
     }
 }

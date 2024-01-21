@@ -26,13 +26,10 @@ impl QuaditManager {
     }
 
     pub async fn start(self) -> Result<(), anyhow::Error> {
+        self.git_manager.start().await?;
         if self.reload_manager.is_some() {
-            self.git_manager.start().await?;
             self.reload_manager.as_ref().unwrap().start().await?;
-            Ok(())
-        } else {
-            self.git_manager.start().await?;
-            Ok(())
         }
+        Ok(())
     }
 }
