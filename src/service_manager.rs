@@ -11,7 +11,8 @@ impl ServiceManager {
         let serviceconf = FileManager::load_quadit_config()?;
         let quadit = QuaditManager::from_yaml(serviceconf).await?;
         quadit.start().await?;
-        tokio::time::sleep(Duration::from_secs(100)).await;
-        Ok(())
+        loop {
+            std::thread::sleep(Duration::from_millis(100));
+        }
     }
 }
