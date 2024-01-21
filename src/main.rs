@@ -29,6 +29,7 @@ async fn try_main() -> Result<()> {
         .target(env_logger::Target::Stdout)
         .init();
 
+    // Run cli
     #[cfg(feature = "cli")]
     QuaditCli::run().await?;
 
