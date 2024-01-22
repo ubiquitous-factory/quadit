@@ -56,7 +56,7 @@ impl GitManager {
 
                 if hm.get(&uuid).is_none() {
                     info!(
-                        "{}: Job created for {} branch: {}, path: {}",
+                        "{}: Job creating for {} branch: {}, path: {}",
                         uuid, this_conf.url, this_conf.branch, this_conf.target_path
                     );
                     let job_path = format!("jobs/{}", uuid); 
@@ -69,6 +69,7 @@ impl GitManager {
                     match gitsync.bootstrap() {
                         Ok(_) => {
                             hm.insert(uuid, this_conf);
+                            info!("{}: Successfully created job. Cloned {} to {}", uuid, gitsync.repo, gitsync.dir.as_path().display().to_string());
                             None
                         }
                         Err(e) => {
@@ -80,7 +81,7 @@ impl GitManager {
                         }
                     };
                 }
-
+                
                 Box::pin(async move {
                     let next_tick = l.next_tick_for_job(uuid).await;
                     match next_tick {
@@ -101,16 +102,19 @@ impl GitManager {
                                 uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path
                             );
                             let job_path = format!("jobs/{}", uuid); 
-                            let first_run = FileManager::job_exists(uuid);
+                            //let first_job = FileManager::job_exists(uuid);
 
                             let quaditsync = quaditsync::GitSync {
                                 repo: internal_gc.url.clone(),
                                 dir: job_path.clone().into(),
                                 ..Default::default()
                             };
-                            // TODO: This currently relies on the quaditsync logging which is a bit meh.
+                            
                             let commitids = match quaditsync.sync() {
-                                Ok(s) => s,
+                                Ok(s) => {
+                                    info!("{}: Sync complete. original oid: {}, new oid: {}", uuid, s.0, s.1);
+                                    s
+                                },
                                 Err(e) => {
                                     error!(
                                         "Failed to quaditsync for {} url: {} branch: {}, path: {} \n {:?}",
@@ -120,10 +124,13 @@ impl GitManager {
                                 }
                             };
 
-                            // different commit ids so we are going to refresh the container file.
-                            if !commitids.0.eq(&commitids.1) || first_run {
+                           
+                            let internal_target_path = internal_gc.target_path.clone();
+                            let internal_job_path = job_path.clone();
+                             // different commit ids so we are going to refresh the container file.
+                            if !commitids.0.eq(&commitids.1) || !FileManager::container_file_deployed(job_path, internal_target_path) {
                                 info!("{}: Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
-                                match FileManager::deploy_container_file(job_path, internal_gc.target_path.clone()) {
+                                match FileManager::deploy_container_file(internal_job_path, internal_gc.target_path.clone()) {
                                     Ok(s) => info!("{}: Deployed to {}", uuid, s),
                                     Err(e) => error!("Error deploying container file: {}", e)
                                 }
@@ -144,6 +151,8 @@ impl GitManager {
                                         Err(e) => error!("{}: Failed to restart: {} {}", uuid,unit, e)
                                     };
                                 }
+                            } else {
+                                info!("{}: Ignored {}", uuid, commitids.0)
                             }
 
                             info!("{}: Next git run {:?}",uuid, ts);
