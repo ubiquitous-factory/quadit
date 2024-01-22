@@ -22,12 +22,12 @@ impl ReloadManager {
             .scheduler
             .add(Job::new_async(conf.schedule.as_str(), |uuid, mut l| {
                 Box::pin(async move {
-                    info!("Added Reload Job");
+                    info!("{}: Reload Job Started", uuid);
 
                     // Query the next execution time for this job
                     let next_tick = l.next_tick_for_job(uuid).await;
                     match next_tick {
-                        Ok(Some(ts)) => info!("Next time for Reload Job is {:?}", ts),
+                        Ok(Some(ts)) => info!("{}: Next execution {:?}", uuid, ts),
                         _ => error!("Could not get next tick for Reload Job"),
                     }
                 })
