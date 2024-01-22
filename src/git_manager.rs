@@ -81,7 +81,7 @@ impl GitManager {
                         }
                     };
                 }
-                
+
                 Box::pin(async move {
                     let next_tick = l.next_tick_for_job(uuid).await;
                     match next_tick {
@@ -109,7 +109,7 @@ impl GitManager {
                                 dir: job_path.clone().into(),
                                 ..Default::default()
                             };
-                            
+
                             let commitids = match quaditsync.sync() {
                                 Ok(s) => {
                                     info!("{}: Sync complete. original oid: {}, new oid: {}", uuid, s.0, s.1);
@@ -124,7 +124,6 @@ impl GitManager {
                                 }
                             };
 
-                           
                             let internal_target_path = internal_gc.target_path.clone();
                             let internal_job_path = job_path.clone();
                              // different commit ids so we are going to refresh the container file.

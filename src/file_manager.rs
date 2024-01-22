@@ -115,19 +115,14 @@ impl FileManager {
                 let mut reader2 = BufReader::new(file2);
                 let mut buf1 = [0; 10000];
                 let mut buf2 = [0; 10000];
-                loop {
-                    if let Result::Ok(n1) = reader1.read(&mut buf1) {
-                        if n1 > 0 {
-                            if let Result::Ok(n2) = reader2.read(&mut buf2) {
-                                if n1 == n2 {
-                                    if buf1 == buf2 {
-                                        continue;
-                                    }
-                                }
-                                return false;
+                // loop {
+                while let Result::Ok(n1) = reader1.read(&mut buf1) {
+                    if n1 > 0 {
+                        if let Result::Ok(n2) = reader2.read(&mut buf2) {
+                            if n1 == n2 && buf1 == buf2 {
+                                continue;
                             }
-                        } else {
-                            break;
+                            return false;
                         }
                     } else {
                         break;
@@ -136,7 +131,7 @@ impl FileManager {
                 return true;
             };
         };
-        return false;
+        false
     }
     /// Copy to the users ~/.config/containers/systemd/
     ///
