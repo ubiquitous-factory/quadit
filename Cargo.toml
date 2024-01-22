@@ -22,7 +22,7 @@ serde = { version = "1.0.195", features = ["derive"] }
 serde_yaml = "0.9.30"
 tokio-cron-scheduler = "0.9.4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-uuid = "1.6.1"
+uuid = "1.7.0"
 dotenvy = "0.15.7"
 dirs = "5.0.1"
 
