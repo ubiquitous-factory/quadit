@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Mutex, OnceLock}
+    sync::{Mutex, OnceLock},
 };
 
 use log::{error, info, warn};
@@ -56,7 +56,7 @@ impl GitManager {
 
                 if hm.get(&uuid).is_none() {
                     info!(
-                        "{} : Job created for {} branch: {}, path: {}",
+                        "{}: Job created for {} branch: {}, path: {}",
                         uuid, this_conf.url, this_conf.branch, this_conf.target_path
                     );
                     let job_path = format!("jobs/{}", uuid); 
@@ -119,15 +119,15 @@ impl GitManager {
                                     return;
                                 }
                             };
-                            
+
                             // different commit ids so we are going to refresh the container file.
                             if !commitids.0.eq(&commitids.1) || first_run {
-                                info!("{}, Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
+                                info!("{}: Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
                                 match FileManager::deploy_container_file(job_path, internal_gc.target_path.clone()) {
                                     Ok(s) => info!("{}: Deployed to {}", uuid, s),
                                     Err(e) => error!("Error deploying container file: {}", e)
                                 }
-                                
+
                                 match ServiceManager::daemon_reload() {
                                     Ok(s) => info!("{}: Reloaded daemon with status: {}", uuid, s),
                                     Err(e) => error!("{}, Failed to reload daemon: {}", uuid, e)
@@ -138,19 +138,15 @@ impl GitManager {
                                         return ;
                                     }
                                 };
+                                if internal_gc.start {
+                                    match ServiceManager::restart(&unit) {
+                                        Ok(s) => info!("{}, Restarted {} with exit code:{}", uuid, unit, s),
+                                        Err(e) => error!("{}: Failed to restart: {} {}", uuid,unit, e)
+                                    };
+                                }
+                            }
 
-                                match ServiceManager::restart(&unit) {
-                                    Ok(s) => info!("{}, Restarted {} with exit code:{}", uuid, unit, s),
-                                    Err(e) => error!("{}: Failed to restart: {} {}", uuid,unit, e)
-                                };  
-                                
-                                 
-                                
-                                // systemctl --user daemon-reload
-                                // systemctl --user restart mysleep.service
-                            } 
-
-                            info!("Next scheduled run {:?}", ts);
+                            info!("{}: Next git run {:?}",uuid, ts);
                         }
                         _ => warn!("Could not get next tick for job"),
                     }

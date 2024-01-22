@@ -76,7 +76,7 @@ impl FileManager {
                 "Target path MUST be a .container file. Found: {}",
                 target_path
             );
-            return Err("File Extenstion unknown".to_string());
+            return Err("File Extension unknown".to_string());
         }
         let file_name = path.file_name().unwrap_or_default();
         let retval = match OsString::from(file_name).into_string() {
