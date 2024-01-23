@@ -9,7 +9,6 @@ pub struct ConfigGit {
     pub target_path: String,
     pub branch: String,
     pub schedule: String,
-    pub start: bool,
     #[serde(flatten)]
     pub extras: Option<HashMap<String, String>>,
 }

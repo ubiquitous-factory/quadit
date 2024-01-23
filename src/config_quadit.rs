@@ -40,4 +40,25 @@ targetConfigs:
             "https://github.com/ubiquitous-factory/quadit".to_string()
         );
     }
+    //     #[test]
+    //     fn test_quaditconfig_from_string_2() {
+    //         let test_yaml = r#"
+    // configReload:
+    //   configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
+    //   schedule: "*/2 * * * *"
+    // targetConfigs:
+    // - url: "https://github.com/ubiquitous-factory/quadit"
+    //   targetPath: "samples/sleep.container"
+    //   branch: "main"
+    //   schedule: "*/1 * * * *"
+    //   start: true
+    // "#;
+    //         let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
+    //         println!("{:#?}", deser);
+    //         assert_eq!(
+    //             deser.target_configs[0].url,
+    //             "https://github.com/ubiquitous-factory/quadit".to_string()
+    //         );
+    //         assert_eq!(deser.target_configs[0].start, true);
+    //     }
 }

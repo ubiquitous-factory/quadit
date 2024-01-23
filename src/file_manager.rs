@@ -109,7 +109,6 @@ impl FileManager {
 
     pub fn are_identical(file_name1: String, file_name2: String) -> bool {
         if let Result::Ok(file1) = File::open(file_name1) {
-            info!("read file");
             let mut reader1 = BufReader::new(file1);
             if let Result::Ok(file2) = File::open(file_name2) {
                 let mut reader2 = BufReader::new(file2);

@@ -25,6 +25,13 @@ impl QuaditManager {
         }
     }
 
+    // Need to put this here as it's shared between the schedulers
+    // pub fn config_git_list() -> &'static Mutex<HashMap<uuid::Uuid, ConfigGit>> {
+    //     static HASHMAP: OnceLock<Mutex<HashMap<uuid::Uuid, ConfigGit>>> = OnceLock::new();
+    //     let hm: HashMap<uuid::Uuid, ConfigGit> = HashMap::new();
+    //     HASHMAP.get_or_init(|| Mutex::new(hm))
+    // }
+
     pub async fn start(self) -> Result<(), anyhow::Error> {
         self.git_manager.start().await?;
         if self.reload_manager.is_some() {

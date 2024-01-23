@@ -1,3 +1,8 @@
+// use std::{
+//     collections::HashMap,
+//     sync::{Mutex, OnceLock},
+// };
+
 use std::{
     collections::HashMap,
     sync::{Mutex, OnceLock},
@@ -126,7 +131,7 @@ impl GitManager {
 
                             let internal_target_path = internal_gc.target_path.clone();
                             let internal_job_path = job_path.clone();
-                             // different commit ids so we are going to refresh the container file.
+                             // different commit ids so we are going to refresh the container only if the file has changed.
                             if !commitids.0.eq(&commitids.1) || !FileManager::container_file_deployed(job_path, internal_target_path) {
                                 info!("{}: Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
                                 match FileManager::deploy_container_file(internal_job_path, internal_gc.target_path.clone()) {
@@ -144,12 +149,12 @@ impl GitManager {
                                         return ;
                                     }
                                 };
-                                if internal_gc.start {
-                                    match ServiceManager::restart(&unit) {
-                                        Ok(s) => info!("{}, Restarted {} with exit code:{}", uuid, unit, s),
-                                        Err(e) => error!("{}: Failed to restart: {} {}", uuid,unit, e)
-                                    };
-                                }
+
+                                match ServiceManager::restart(&unit) {
+                                    Ok(s) => info!("{}, Restarted {} with exit code:{}", uuid, unit, s),
+                                    Err(e) => error!("{}: Failed to restart: {} {}", uuid,unit, e)
+                                };
+
                             } else {
                                 info!("{}: Ignored {}", uuid, commitids.0)
                             }
