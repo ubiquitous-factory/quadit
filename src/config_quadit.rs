@@ -18,7 +18,7 @@ impl ConfigQuadit {
 
 #[cfg(test)]
 mod tests {
-    use crate::config_quadit::ConfigQuadit;
+    use crate::{config_git::Actions, config_quadit::ConfigQuadit};
 
     #[test]
     fn test_quaditconfig_from_string() {
@@ -31,7 +31,7 @@ targetConfigs:
   targetPath: "samples/sleep.container"
   branch: "main"
   schedule: "*/1 * * * *"
-  start: false
+  action: stop
 "#;
         let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
         println!("{:#?}", deser);
@@ -39,26 +39,27 @@ targetConfigs:
             deser.target_configs[0].url,
             "https://github.com/ubiquitous-factory/quadit".to_string()
         );
+        assert_eq!(deser.target_configs[0].action, Actions::stop);
     }
-    //     #[test]
-    //     fn test_quaditconfig_from_string_2() {
-    //         let test_yaml = r#"
-    // configReload:
-    //   configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
-    //   schedule: "*/2 * * * *"
-    // targetConfigs:
-    // - url: "https://github.com/ubiquitous-factory/quadit"
-    //   targetPath: "samples/sleep.container"
-    //   branch: "main"
-    //   schedule: "*/1 * * * *"
-    //   start: true
-    // "#;
-    //         let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
-    //         println!("{:#?}", deser);
-    //         assert_eq!(
-    //             deser.target_configs[0].url,
-    //             "https://github.com/ubiquitous-factory/quadit".to_string()
-    //         );
-    //         assert_eq!(deser.target_configs[0].start, true);
-    //     }
+    #[test]
+    fn test_quaditconfig_from_string_2() {
+        let test_yaml = r#"
+    configReload:
+      configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
+      schedule: "*/2 * * * *"
+    targetConfigs:
+    - url: "https://github.com/ubiquitous-factory/quadit"
+      targetPath: "samples/sleep.container"
+      branch: "main"
+      schedule: "*/1 * * * *"
+      action: start
+    "#;
+        let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
+        println!("{:#?}", deser);
+        assert_eq!(
+            deser.target_configs[0].url,
+            "https://github.com/ubiquitous-factory/quadit".to_string()
+        );
+        assert_eq!(deser.target_configs[0].action, Actions::start);
+    }
 }

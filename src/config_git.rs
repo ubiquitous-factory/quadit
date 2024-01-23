@@ -9,6 +9,15 @@ pub struct ConfigGit {
     pub target_path: String,
     pub branch: String,
     pub schedule: String,
+    pub action: Actions,
     #[serde(flatten)]
     pub extras: Option<HashMap<String, String>>,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[allow(non_camel_case_types)]
+pub enum Actions {
+    start,
+    stop,
+    restart,
 }
