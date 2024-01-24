@@ -5,7 +5,7 @@ use crate::{config_quadit::ConfigQuadit, git_manager::GitManager, reload_manager
 pub struct QuaditManager {
     /// The git scheduler
     git_manager: GitManager,
-    /// The scheduler resposible for loading git commands
+    /// The scheduler responsible for loading git commands
     reload_manager: Option<ReloadManager>,
 }
 
