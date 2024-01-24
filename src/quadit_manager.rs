@@ -13,7 +13,7 @@ impl QuaditManager {
     /// Returns an configured quadit manager.
     /// # Arguments
     ///
-    /// * `fonf` - A String slice that contains the complete `config.yaml`
+    /// * `conf` - A String slice that contains the complete `config.yaml`
     pub async fn from_yaml(conf: String) -> Result<QuaditManager, anyhow::Error> {
         let quad = ConfigQuadit::from_yaml(conf)?;
         if quad.config_reload.is_some() {
