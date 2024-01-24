@@ -2,17 +2,25 @@ use log::{error, info};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::config_reload::ConfigReload;
-#[allow(dead_code)]
+
+/// Manages the reloading of the configuration from a URL endpoint in the `config.yaml`
 pub struct ReloadManager {
+    /// The scheduler
     scheduler: JobScheduler,
 }
 
 impl ReloadManager {
+    /// Returns a new ReloadManager with the scheduler initialised.
     pub async fn new() -> Result<ReloadManager, JobSchedulerError> {
         let sched = JobScheduler::new().await?;
 
         Ok(ReloadManager { scheduler: sched })
     }
+
+    /// Returns a ReloadManager with the ConfigReload loaded as a job.
+    /// # Arguments
+    ///
+    /// * `conf` - A populated `ConfigReload` object
     pub async fn from_config_reload(
         conf: ConfigReload,
     ) -> Result<ReloadManager, JobSchedulerError> {
@@ -36,6 +44,7 @@ impl ReloadManager {
         Ok(reload_manager)
     }
 
+    /// Starts the `ReloadManager scheduler`
     pub async fn start(&self) -> Result<(), JobSchedulerError> {
         info!("Starting schedule for reload config");
         self.scheduler.start().await

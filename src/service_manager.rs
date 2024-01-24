@@ -11,6 +11,7 @@ pub struct ServiceManager {}
 impl ServiceManager {
     // env::set_var("SYSTEMCTL_PATH", "VALUE");
 
+    /// Creates an instance of the QuaditManager and startes it.
     pub async fn run() -> Result<(), Error> {
         let serviceconf = FileManager::load_quadit_config()?;
         let quadit = QuaditManager::from_yaml(serviceconf).await?;
@@ -19,10 +20,16 @@ impl ServiceManager {
             std::thread::sleep(Duration::from_millis(100));
         }
     }
+
+    /// Restarts the systemd unit
+    /// # Arguments
+    ///
+    /// * `unit` - A string slice with the unit name
     pub fn restart(unit: &str) -> std::io::Result<ExitStatus> {
         ServiceManager::systemctl(vec!["restart", unit])
     }
 
+    /// Reloads the systemd daemon
     pub fn daemon_reload() -> std::io::Result<ExitStatus> {
         ServiceManager::systemctl(vec!["daemon-reload"])
     }

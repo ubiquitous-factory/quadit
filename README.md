@@ -24,17 +24,22 @@ Please evaluate the following matrix to understand which one would better suit y
 
 ||fetchit|quadit|notes|
 |---|---|---|---|
+|simple file transfer|<div class="greencircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
+|ansible|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
+|kube|<div class="greencircle"></div>|<div class="redcircle"></div>|Raw yaml files are not a quadit goal|
+|raw|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
+|plain systemd files|<div class="greencircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
 |inbuilt CLI|<div class="redcircle"></div>|<div class="greencircle"></div>|Main design goal to improve devops experience|
 |user quadlet|<div class="redcircle"></div>|<div class="greencircle"></div>|Not available in fetchit [See fetchit issue](https://github.com/containers/fetchit/issues/311)|
 |root quadlet|<div class="redcircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
 |systemd stop|<div class="redcircle"></div>|<div class="greencircle"></div>|[Code exists](https://github.com/containers/fetchit/blob/main/method_containers/systemd/systemd-script#L51) in fetchit but not surfaced in config|
 |systemd start|<div class="redcircle"></div>|<div class="greencircle"></div>|Not implemented in `fetchit`|
-|auto-update|<div class="greencircle"></div>|<div class="greencircle"></div>|quadit is targeting auto configuration|
-|simple file transfer|<div class="greencircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
-|ansible|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
-|kube|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
-|raw|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
-|plain systemd files|<div class="greencircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
+|auto-update|<div class="greencircle"></div>|<div class="redcircle"></div>|quadit is targeting auto configuration but work is yet to commence|
+|.kube|<div class="redcircle"></div>|<div class="yellowcircle"></div>|Standard quadlet file type - Implementation in progress|
+|.volume|<div class="redcircle"></div>|<div class="greencircle"></div>|Standard quadlet file type|
+|.network|<div class="redcircle"></div>|<div class="greencircle"></div>|Standard quadlet file type|
+|.pod|<div class="redcircle"></div>|<div class="greencircle"></div>|Standard quadlet file type|
+|.container|<div class="redcircle"></div>|<div class="greencircle"></div>|Standard quadlet file type|
 
 
 ## install
@@ -87,6 +92,13 @@ If you want to contribute to `quadit`, please read our [CONTRIBUTING notes].
 width: 10px; 
             height: 10px; 
             background-color: green; 
+            border-radius: 50%; 
+            margin: auto;
+    } 
+    .yellowcircle {
+width: 10px; 
+            height: 10px; 
+            background-color: yellow; 
             border-radius: 50%; 
             margin: auto;
     } 

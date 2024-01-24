@@ -13,17 +13,24 @@ use log::{error, info, warn};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::{config_git::ConfigGit, file_manager::FileManager, service_manager::ServiceManager};
-
+/// Manages the check out and syncing of each `GitConfig` using async tasks.
 pub struct GitManager {
+    /// The scheduler responsible for executing a job per entry in `config.yaml`
     scheduler: JobScheduler,
 }
 
 impl GitManager {
+    /// Returns a new GitManager with the scheduler initialised.
     pub async fn new() -> Result<GitManager, JobSchedulerError> {
         let sched = JobScheduler::new().await?;
 
         Ok(GitManager { scheduler: sched })
     }
+
+    /// Returns a GitManager with the targetConfigs loaded as jobs.
+    /// # Arguments
+    ///
+    /// * `target_configs` - A vector of `ConfigGit` objects
     pub async fn from_target_configs(
         target_configs: Vec<ConfigGit>,
     ) -> Result<GitManager, JobSchedulerError> {
@@ -40,11 +47,19 @@ impl GitManager {
         Ok(git_manager)
     }
 
+    /// A shared object between the git configurations and the jobs.
+    /// Used for accessing data across async calls.
+    /// Beware three arrow dragons!!
     fn config_git_list() -> &'static Mutex<HashMap<uuid::Uuid, ConfigGit>> {
         static HASHMAP: OnceLock<Mutex<HashMap<uuid::Uuid, ConfigGit>>> = OnceLock::new();
         let hm: HashMap<uuid::Uuid, ConfigGit> = HashMap::new();
         HASHMAP.get_or_init(|| Mutex::new(hm))
     }
+
+    /// Returns the uuid of the configuration and sets up the call back for the Job to run on each tick.
+    /// # Arguments
+    ///
+    /// * `conf` - A`ConfigGit` object
     pub async fn add_config(&mut self, conf: ConfigGit) -> Result<uuid::Uuid, JobSchedulerError> {
         let sched = conf.schedule.clone();
 
@@ -143,7 +158,7 @@ impl GitManager {
                                     Ok(s) => info!("{}: Reloaded daemon with status: {}", uuid, s),
                                     Err(e) => error!("{}, Failed to reload daemon: {}", uuid, e)
                                 };
-                                let unit = match FileManager::container_file_to_unit_name(internal_gc.target_path.clone()) {
+                                let unit = match FileManager::filename_to_unit_name(internal_gc.target_path.clone()) {
                                     Ok(s) => s,
                                     Err(e) => { error!("{}, Failed to get unit name: {}", uuid, e);
                                         return ;
@@ -168,6 +183,7 @@ impl GitManager {
             .await
     }
 
+    /// Starts the `GitManager scheduler`
     pub async fn start(&self) -> Result<(), JobSchedulerError> {
         info!("Starting schedule for all git configs");
         self.scheduler.start().await

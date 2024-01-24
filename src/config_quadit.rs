@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::config_commands::ConfigCommands;
 use crate::config_git::ConfigGit;
 use crate::config_reload::ConfigReload;
 
@@ -8,6 +9,7 @@ use crate::config_reload::ConfigReload;
 pub struct ConfigQuadit {
     pub target_configs: Vec<ConfigGit>,
     pub config_reload: Option<ConfigReload>,
+    pub systemd_commands: Option<Vec<ConfigCommands>>,
 }
 
 impl ConfigQuadit {
@@ -18,7 +20,7 @@ impl ConfigQuadit {
 
 #[cfg(test)]
 mod tests {
-    use crate::{config_git::Actions, config_quadit::ConfigQuadit};
+    use crate::config_quadit::ConfigQuadit;
 
     #[test]
     fn test_quaditconfig_from_string() {
@@ -31,7 +33,6 @@ targetConfigs:
   targetPath: "samples/sleep.container"
   branch: "main"
   schedule: "*/1 * * * *"
-  action: stop
 "#;
         let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
         println!("{:#?}", deser);
@@ -39,7 +40,6 @@ targetConfigs:
             deser.target_configs[0].url,
             "https://github.com/ubiquitous-factory/quadit".to_string()
         );
-        assert_eq!(deser.target_configs[0].action, Actions::stop);
     }
     #[test]
     fn test_quaditconfig_from_string_2() {
@@ -47,12 +47,14 @@ targetConfigs:
     configReload:
       configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
       schedule: "*/2 * * * *"
+    configCommands:
+      name: sleep
+      action: stop
     targetConfigs:
     - url: "https://github.com/ubiquitous-factory/quadit"
       targetPath: "samples/sleep.container"
       branch: "main"
       schedule: "*/1 * * * *"
-      action: start
     "#;
         let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
         println!("{:#?}", deser);
@@ -60,6 +62,5 @@ targetConfigs:
             deser.target_configs[0].url,
             "https://github.com/ubiquitous-factory/quadit".to_string()
         );
-        assert_eq!(deser.target_configs[0].action, Actions::start);
     }
 }

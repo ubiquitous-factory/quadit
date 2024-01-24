@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod config_commands;
 pub mod config_git;
 pub mod config_quadit;
 pub mod config_reload;

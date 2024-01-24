@@ -1,13 +1,19 @@
 use anyhow::Ok;
 
 use crate::{config_quadit::ConfigQuadit, git_manager::GitManager, reload_manager::ReloadManager};
-#[allow(dead_code)]
+/// The manager of managers responsible for loading config and starting the different schedulers.
 pub struct QuaditManager {
+    /// The git scheduler
     git_manager: GitManager,
+    /// The scheduler resposible for loading git commands
     reload_manager: Option<ReloadManager>,
 }
 
 impl QuaditManager {
+    /// Returns an configured quadit manager.
+    /// # Arguments
+    ///
+    /// * `fonf` - A String slice that contains the complete `config.yaml`
     pub async fn from_yaml(conf: String) -> Result<QuaditManager, anyhow::Error> {
         let quad = ConfigQuadit::from_yaml(conf)?;
         if quad.config_reload.is_some() {
@@ -32,6 +38,7 @@ impl QuaditManager {
     //     HASHMAP.get_or_init(|| Mutex::new(hm))
     // }
 
+    /// Starts the scheduler services
     pub async fn start(self) -> Result<(), anyhow::Error> {
         self.git_manager.start().await?;
         if self.reload_manager.is_some() {

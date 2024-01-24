@@ -1,17 +1,28 @@
+use log::{error, info};
+
 use std::{
-    ffi::{OsStr, OsString},
+    env::var,
     fs::{self, File},
     io::{BufReader, Read},
     path::{Path, PathBuf},
+    sync::OnceLock,
 };
 
-use log::{error, info};
-
-///
-///
+const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "kube"];
+/// Manages all the file system interactions
 pub struct FileManager {}
 
 impl FileManager {
+    fn podman_unit_path() -> &'static str {
+        static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
+        PODMAN_UNIT_PATH.get_or_init(|| {
+            var("PODMAN_UNIT_PATH").unwrap_or(".config/containers/systemd".to_string())
+        })
+    }
+    fn job_folder() -> &'static str {
+        static JOB_FOLDER: OnceLock<String> = OnceLock::new();
+        JOB_FOLDER.get_or_init(|| var("JOB_FOLDER").unwrap_or("jobs".to_string()))
+    }
     /// Simple wrapper around the `read_to_string`
     pub fn readfile(file_path: String) -> Result<String, std::io::Error> {
         info!("Loading: {}", file_path);
@@ -25,13 +36,18 @@ impl FileManager {
         loc
     }
 
+    /// Test to see if the job folder exists.
+    /// Used to validate if this is the first time the job has ran.
+    /// # Arguments
+    /// `uuid` - The uuid of the job - Usually `xxxxxxxx-xxxx-4xxx-Nxxx-xxxxxxxxxxxx`.
     pub fn job_exists(uuid: uuid::Uuid) -> bool {
         let mut pb = PathBuf::new();
-        pb.push("jobs");
+        pb.push(FileManager::job_folder());
         pb.push(uuid.to_string());
         pb.exists()
     }
 
+    /// Gets the home location of the user currently running quadit
     pub fn quadit_home() -> String {
         let mut dir = match dirs::home_dir() {
             Some(s) => s,
@@ -56,38 +72,40 @@ impl FileManager {
             std::process::exit(1);
         };
 
-        // TODO: OS specific
+        // TODO: OS specific but that's OK for linux
         dir.as_path().display().to_string()
     }
 
+    /// Loads the quadit config based on the resolved location.
     pub fn load_quadit_config() -> Result<String, std::io::Error> {
         FileManager::readfile(FileManager::resolve_quadit_config_location())
     }
 
-    /// converts the .container file name to a service name with some additional checks.
-    pub fn container_file_to_unit_name(target_path: String) -> Result<String, String> {
-        let path = Path::new(&target_path);
-
-        if path.extension() != Some(OsStr::new("container")) {
+    /// converts the quadlet file name to a service name with some additional checks.
+    pub fn filename_to_unit_name(target_path: String) -> Result<String, String> {
+        let mut path = PathBuf::from(&target_path);
+        if !SUPPORTED_FILES.contains(
+            &path
+                .extension()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or_default(),
+        ) {
             error!(
-                "Target path MUST be a .container file. Found: {}",
+                "Target path MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {}",
                 target_path
             );
             return Err("File Extension unknown".to_string());
         }
-        let file_name = path.file_name().unwrap_or_default();
-        let retval = match OsString::from(file_name).into_string() {
-            Ok(s) => s.replace(".container", ".service"),
-            Err(e) => {
-                let msg = format!("Problem converting name {:?}", e);
-                error!("{}", msg);
-                return Err(msg);
-            }
-        };
-
-        Ok(retval)
+        path.set_extension("service");
+        Ok(path.as_path().display().to_string())
     }
 
+    /// Test to see if a file exists in the container deployment location
+    /// Currently `~/.config/containers/systemd/` but this may be expanded in later releases.
+    /// # Arguments
+    /// `job_path` - The path to the job - Usually `jobs/xxxxxxxx-xxxx-4xxx-Nxxx-xxxxxxxxxxxx`.
+    /// `target_path` - The path of the file in the git repo  
     pub fn container_file_deployed(job_path: String, target_path: String) -> bool {
         let mut definition_path = PathBuf::new();
         definition_path.push(job_path);
@@ -98,7 +116,7 @@ impl FileManager {
             Some(p) => p,
             None => PathBuf::new(),
         };
-        config_path.push(".config/containers/systemd");
+        config_path.push(FileManager::podman_unit_path());
         config_path.push(path.file_name().unwrap_or_default());
 
         FileManager::are_identical(
@@ -107,6 +125,11 @@ impl FileManager {
         )
     }
 
+    /// Compare the bytes of two files incrementally to see if they differ.
+    ///
+    /// # Arguments
+    /// `file_name1` - The first file to compare.
+    /// `file_name2` - The second file to compare.    
     pub fn are_identical(file_name1: String, file_name2: String) -> bool {
         if let Result::Ok(file1) = File::open(file_name1) {
             let mut reader1 = BufReader::new(file1);
@@ -138,20 +161,22 @@ impl FileManager {
     /// `job_path` - The location that the repo has been copied to
     /// `target_path` - The location of the .container file in the repo
     pub fn deploy_container_file(job_path: String, target_path: String) -> Result<String, String> {
-        if !target_path.ends_with(".container") {
-            error!(
-                "Target path MUST be a .container file. Found: {}",
-                target_path
-            );
-            return Err("UNKNOWN_FILE".to_string());
-        }
         let tpath = target_path.clone();
         let path = Path::new(tpath.as_str());
 
         let mut definition_path = PathBuf::new();
         definition_path.push(job_path);
         definition_path.push(target_path);
-
+        if !SUPPORTED_FILES.contains(
+            &definition_path
+                .extension()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or_default(),
+        ) {
+            error!("Target path MUST be a .container file. Found: {}", tpath);
+            return Err("UNKNOWN_FILE".to_string());
+        }
         let mut config_path = match dirs::home_dir() {
             Some(p) => p,
             None => PathBuf::new(),
@@ -177,16 +202,6 @@ impl FileManager {
         }
 
         Ok(cpath.as_path().display().to_string())
-        // let retval = match OsString::from(cpath).into_string() {
-        //     Ok(s) => s.replace(".container", ".service"),
-        //     Err(e) => {
-        //         let msg = format!("Problem converting name {:?}", e);
-        //         error!("{}", msg);
-        //         return Err(msg);
-        //     }
-        // };
-
-        // Ok(retval)
     }
 }
 
@@ -251,7 +266,8 @@ mod tests {
     fn test_container_file_to_unit_name() {
         let original = "test.container".to_string();
         let expected = "test.service".to_string();
-        let resp = FileManager::container_file_to_unit_name(original);
+        let resp = FileManager::filename_to_unit_name(original);
+        println!("resp:{:?}", resp);
         assert_eq!(expected, resp.unwrap());
     }
 }
