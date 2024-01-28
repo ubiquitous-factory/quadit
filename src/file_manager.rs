@@ -82,7 +82,7 @@ impl FileManager {
     }
 
     /// converts the quadlet file name to a service name with some additional checks.
-    pub fn filename_to_unit_name(target_path: String) -> Result<String, String> {
+    pub fn filename_to_unit_name(target_path: &str) -> Result<String, String> {
         let mut path = PathBuf::from(&target_path);
         if !SUPPORTED_FILES.contains(
             &path
@@ -106,12 +106,12 @@ impl FileManager {
     /// # Arguments
     /// `job_path` - The path to the job - Usually `jobs/xxxxxxxx-xxxx-4xxx-Nxxx-xxxxxxxxxxxx`.
     /// `target_path` - The path of the file in the git repo  
-    pub fn container_file_deployed(job_path: String, target_path: String) -> bool {
+    pub fn container_file_deployed(job_path: &str, target_path: &str) -> bool {
         let mut definition_path = PathBuf::new();
         definition_path.push(job_path);
-        definition_path.push(target_path.clone());
+        definition_path.push(target_path);
 
-        let path = Path::new(target_path.as_str());
+        let path = Path::new(target_path);
         let mut config_path = match dirs::home_dir() {
             Some(p) => p,
             None => PathBuf::new(),
@@ -125,6 +125,24 @@ impl FileManager {
         )
     }
 
+    pub fn get_files_in_directory(path: &str) -> Result<Vec<String>, anyhow::Error> {
+        // Get a list of all entries in the folder
+        let entries = fs::read_dir(path)?;
+
+        // Extract the filenames from the directory entries and store them in a vector
+        let file_names: Vec<String> = entries
+            .filter_map(|entry| {
+                let path = entry.ok()?.path();
+                if path.is_file() {
+                    path.file_name()?.to_str().map(|s| (s.to_owned()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        Ok(file_names)
+    }
     /// Compare the bytes of two files incrementally to see if they differ.
     ///
     /// # Arguments
@@ -160,9 +178,8 @@ impl FileManager {
     /// # Arguments
     /// `job_path` - The location that the repo has been copied to
     /// `target_path` - The location of the .container file in the repo
-    pub fn deploy_container_file(job_path: String, target_path: String) -> Result<String, String> {
-        let tpath = target_path.clone();
-        let path = Path::new(tpath.as_str());
+    pub fn deploy_container_file(job_path: &str, target_path: &str) -> Result<String, String> {
+        let path = Path::new(target_path);
 
         let mut definition_path = PathBuf::new();
         definition_path.push(job_path);
@@ -174,7 +191,10 @@ impl FileManager {
                 .to_str()
                 .unwrap_or_default(),
         ) {
-            error!("Target path MUST be a .container file. Found: {}", tpath);
+            error!(
+                "Target path MUST be a .container file. Found: {}",
+                target_path
+            );
             return Err("UNKNOWN_FILE".to_string());
         }
         let mut config_path = match dirs::home_dir() {
@@ -252,8 +272,7 @@ mod tests {
         let rm_file_path: PathBuf = [jobdir, "test.container"].iter().collect();
         File::create(file_path).unwrap();
 
-        let s = FileManager::deploy_container_file(jobdir.to_string(), target_path.to_string())
-            .unwrap();
+        let s = FileManager::deploy_container_file(jobdir, target_path).unwrap();
         println!("{}", config_path.as_path().display());
         println!("{}", s);
         assert!(config_path.exists());
@@ -266,7 +285,7 @@ mod tests {
     fn test_container_file_to_unit_name() {
         let original = "test.container".to_string();
         let expected = "test.service".to_string();
-        let resp = FileManager::filename_to_unit_name(original);
+        let resp = FileManager::filename_to_unit_name(&original);
         println!("resp:{:?}", resp);
         assert_eq!(expected, resp.unwrap());
     }

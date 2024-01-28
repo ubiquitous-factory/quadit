@@ -5,6 +5,7 @@
 
 use std::{
     collections::HashMap,
+    fs::metadata,
     sync::{Mutex, OnceLock},
 };
 
@@ -144,32 +145,14 @@ impl GitManager {
                                 }
                             };
 
-                            let internal_target_path = internal_gc.target_path.clone();
-                            let internal_job_path = job_path.clone();
                              // different commit ids so we are going to refresh the container only if the file has changed.
-                            if !commitids.0.eq(&commitids.1) || !FileManager::container_file_deployed(job_path, internal_target_path) {
+                            if !commitids.0.eq(&commitids.1) {
                                 info!("{}: Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
-                                match FileManager::deploy_container_file(internal_job_path, internal_gc.target_path.clone()) {
-                                    Ok(s) => info!("{}: Deployed to {}", uuid, s),
-                                    Err(e) => error!("Error deploying container file: {}", e)
+                                if GitManager::process_repo(&job_path, &internal_gc.target_path, uuid) {
+                                    info!("{}: Completed deployment of {}", uuid, &internal_gc.target_path);     
+                                } else {
+                                    error!("{}: Failed deployment of {}", uuid, &internal_gc.target_path);
                                 }
-
-                                match ServiceManager::daemon_reload() {
-                                    Ok(s) => info!("{}: Reloaded daemon with status: {}", uuid, s),
-                                    Err(e) => error!("{}, Failed to reload daemon: {}", uuid, e)
-                                };
-                                let unit = match FileManager::filename_to_unit_name(internal_gc.target_path.clone()) {
-                                    Ok(s) => s,
-                                    Err(e) => { error!("{}, Failed to get unit name: {}", uuid, e);
-                                        return ;
-                                    }
-                                };
-
-                                match ServiceManager::restart(&unit) {
-                                    Ok(s) => info!("{}, Restarted {} with exit code:{}", uuid, unit, s),
-                                    Err(e) => error!("{}: Failed to restart: {} {}", uuid,unit, e)
-                                };
-
                             } else {
                                 info!("{}: Ignored {}", uuid, commitids.0)
                             }
@@ -183,6 +166,61 @@ impl GitManager {
             .await
     }
 
+    /// Processes the repo based on the target path supplied.
+    /// If it's a directory it iterates through the top level of the directory
+    /// Multi level structures should be implemented as different targets in the `config.yaml`
+    fn process_repo(job_path: &str, target_path: &str, uuid: uuid::Uuid) -> bool {
+        let md = match metadata(".") {
+            Ok(m) => m,
+            Err(e) => {
+                error!("{}: Error getting metadata{}", uuid, e);
+                return false;
+            }
+        };
+
+        if md.is_file() && !FileManager::container_file_deployed(job_path, target_path) {
+            // Iteratively loop through the job directory and only deploy the files that are different.
+            match FileManager::deploy_container_file(job_path, target_path) {
+                Ok(s) => info!("{}: Deployed to {}", uuid, s),
+                Err(e) => {
+                    error!("Error deploying container file: {}", e);
+                    return false;
+                }
+            }
+
+            match ServiceManager::daemon_reload() {
+                Ok(s) => info!("{}: Reloaded daemon with status: {}", uuid, s),
+                Err(e) => {
+                    error!("{}, Failed to reload daemon: {}", uuid, e);
+                    return false;
+                }
+            };
+            let unit = match FileManager::filename_to_unit_name(target_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    error!("{}, Failed to get unit name: {}", uuid, e);
+                    return false;
+                }
+            };
+
+            match ServiceManager::restart(&unit) {
+                Ok(s) => info!("{}, Restarted {} with exit code:{}", uuid, unit, s),
+                Err(e) => error!("{}: Failed to restart: {} {}", uuid, unit, e),
+            };
+        } else if md.is_dir() {
+            info!("{}: Processing Directory {}", uuid, target_path);
+            match FileManager::get_files_in_directory(target_path) {
+                Ok(file_names) => {
+                    for file_name in file_names {
+                        let file_path = format!("{}/{}", target_path, file_name);
+                        GitManager::process_repo(job_path, &file_path, uuid);
+                    }
+                }
+                Err(e) => error!("Error: {}", e),
+            }
+        }
+        true
+    }
     /// Starts the `GitManager scheduler`
     pub async fn start(&self) -> Result<(), JobSchedulerError> {
         info!("Starting schedule for all git configs");
