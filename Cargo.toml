@@ -18,7 +18,7 @@ clap = { version = "4.4.18", features = [
 env_logger = "^0.11.0"
 quaditsync = "1.0.1"
 log = "0.4.20"
-serde = { version = "1.0.195", features = ["derive"] }
+serde = { version = "1.0.196", features = ["derive"] }
 serde_yaml = "0.9.30"
 tokio-cron-scheduler = "0.9.4"
 uuid = "1.7.0"
