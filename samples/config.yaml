@@ -1,9 +1,8 @@
 configReload:
-  configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
+  configURL: https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/samples/config.yaml
   schedule: "1/120 * * * * *"
 targetConfigs:
 - url: https://github.com/ubiquitous-factory/quadit
-  targetPath: "samples/sleep.container"
+  targetPath: "sleep.container"
   branch: "main"
   schedule: "1/2 * * * * *"
-  start: false
