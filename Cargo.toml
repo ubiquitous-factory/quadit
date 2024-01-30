@@ -1,6 +1,6 @@
 [package]
 name = "quadit"
-version = "0.0.1"
+version = "0.1.0"
 description = "A gitops tool to deploy systemd managed containers on linux using quadlets"
 authors = ["Anton Whalley <antonwhalley@yahoo.com>"]
 license = "MIT OR Apache-2.0"
@@ -25,6 +25,9 @@ uuid = "1.7.0"
 tokio = { version = "1.35.1", features = ["macros", "rt-multi-thread"] }
 dotenvy = "0.15.7"
 dirs = "5.0.1"
+chrono = "0.4.33"
+colored = "2.1.0"
+
 
 [[bin]]
 path = "src/main.rs"

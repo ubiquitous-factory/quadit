@@ -25,7 +25,7 @@ async fn try_main() -> Result<()> {
         .format_timestamp(None)
         .format_target(false)
         .format_module_path(false)
-        .format_level(false)
+        .format_level(true)
         .target(env_logger::Target::Stdout)
         .init();
 

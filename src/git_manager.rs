@@ -6,6 +6,7 @@
 use std::{
     collections::HashMap,
     fs::metadata,
+    path::PathBuf,
     sync::{Mutex, OnceLock},
 };
 
@@ -146,16 +147,16 @@ impl GitManager {
                             };
 
                              // different commit ids so we are going to refresh the container only if the file has changed.
-                            if !commitids.0.eq(&commitids.1) {
+                            // if !commitids.0.eq(&commitids.1) {
                                 info!("{}: Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
                                 if GitManager::process_repo(&job_path, &internal_gc.target_path, uuid) {
                                     info!("{}: Completed deployment of {}", uuid, &internal_gc.target_path);     
                                 } else {
                                     error!("{}: Failed deployment of {}", uuid, &internal_gc.target_path);
                                 }
-                            } else {
-                                info!("{}: Ignored {}", uuid, commitids.0)
-                            }
+                            // } else {
+                            //     info!("{}: Ignored {}", uuid, commitids.0)
+                            // }
 
                             info!("{}: Next git run {:?}",uuid, ts);
                         }
@@ -170,7 +171,11 @@ impl GitManager {
     /// If it's a directory it iterates through the top level of the directory
     /// Multi level structures should be implemented as different targets in the `config.yaml`
     fn process_repo(job_path: &str, target_path: &str, uuid: uuid::Uuid) -> bool {
-        let md = match metadata(".") {
+        let mut mdpath = PathBuf::new();
+        mdpath.push(job_path);
+        mdpath.push(target_path);
+
+        let md = match metadata(mdpath) {
             Ok(m) => m,
             Err(e) => {
                 error!("{}: Error getting metadata{}", uuid, e);
@@ -183,7 +188,7 @@ impl GitManager {
             match FileManager::deploy_container_file(job_path, target_path) {
                 Ok(s) => info!("{}: Deployed to {}", uuid, s),
                 Err(e) => {
-                    error!("Error deploying container file: {}", e);
+                    error!("{}: Error deploying container file: {}", uuid, e);
                     return false;
                 }
             }

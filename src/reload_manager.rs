@@ -1,4 +1,4 @@
-use log::{error, info};
+use log::{error, info, warn};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::config_reload::ConfigReload;
@@ -31,7 +31,7 @@ impl ReloadManager {
             .add(Job::new_async(conf.schedule.as_str(), |uuid, mut l| {
                 Box::pin(async move {
                     info!("{}: Reload job started", uuid);
-
+                    warn!("{}: RELOAD NOT IMPLEMENTED", uuid);
                     // Query the next execution time for this job
                     let next_tick = l.next_tick_for_job(uuid).await;
                     match next_tick {

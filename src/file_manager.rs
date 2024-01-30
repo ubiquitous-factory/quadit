@@ -98,7 +98,13 @@ impl FileManager {
             return Err("File Extension unknown".to_string());
         }
         path.set_extension("service");
-        Ok(path.as_path().display().to_string())
+        match path.file_name() {
+            Some(s) => match s.to_os_string().into_string() {
+                Ok(v) => Ok(v),
+                Err(_) => Err("Failed to convert filename to string".to_string()),
+            },
+            None => Err("Service name not generated".to_string()),
+        }
     }
 
     /// Test to see if a file exists in the container deployment location
@@ -191,11 +197,11 @@ impl FileManager {
                 .to_str()
                 .unwrap_or_default(),
         ) {
-            error!(
-                "Target path MUST be a .container file. Found: {}",
+            let msg = format!(
+                "File MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {}",
                 target_path
             );
-            return Err("UNKNOWN_FILE".to_string());
+            return Err(msg);
         }
         let mut config_path = match dirs::home_dir() {
             Some(p) => p,
@@ -283,10 +289,10 @@ mod tests {
 
     #[test]
     fn test_container_file_to_unit_name() {
-        let original = "test.container".to_string();
+        let original = "sample/test.container".to_string();
         let expected = "test.service".to_string();
         let resp = FileManager::filename_to_unit_name(&original);
-        println!("resp:{:?}", resp);
+
         assert_eq!(expected, resp.unwrap());
     }
 }

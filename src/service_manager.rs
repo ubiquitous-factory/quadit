@@ -1,4 +1,5 @@
 use anyhow::Error;
+use std::fs;
 use std::process::{Child, ExitStatus};
 use std::time::Duration;
 
@@ -29,6 +30,11 @@ impl ServiceManager {
         ServiceManager::systemctl(vec!["restart", unit])
     }
 
+    pub fn remove(unit: &str, deployment_path: &str) -> std::io::Result<ExitStatus> {
+        ServiceManager::systemctl(vec!["stop", unit])?;
+        fs::remove_file(deployment_path)?;
+        ServiceManager::daemon_reload()
+    }
     /// Reloads the systemd daemon
     pub fn daemon_reload() -> std::io::Result<ExitStatus> {
         ServiceManager::systemctl(vec!["daemon-reload"])
@@ -54,3 +60,16 @@ impl ServiceManager {
         }
     }
 }
+
+// notes
+// systemctl stop [servicename]
+// systemctl disable [servicename]
+// rm -fr /run/user/1000/systemd/generator/sleep.service
+// rm -fr /run/user/1000/systemd/generator/default.target.wants/sleep.service
+// rm -fr /run/user/1000/systemd/generator/multi-user.target.wants/sleep.service
+// rm /etc/systemd/system/[servicename]
+// rm /etc/systemd/system/[servicename] # and symlinks that might be related
+// rm /usr/lib/systemd/system/[servicename]
+// rm /usr/lib/systemd/system/[servicename] # and symlinks that might be related
+// systemctl daemon-reload
+// systemctl reset-failed
