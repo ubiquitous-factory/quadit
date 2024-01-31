@@ -44,20 +44,13 @@ Please evaluate the following matrix to understand which one would better suit y
 
 ## install
 
-### development 
-
+From the edge device running a systemd based distro with the latest podman the following commands:
 ```
-cargo install quadit
-quadit config
-quadit deploy
+mkdir ~/.quadit
+curl -o ~/.quadit https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/samples/config.yaml
+curl -o ~/.config/containers/systemd https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/deploy/quadit.container
+loginctl enable-linger $USER
 ```
-
-### production -TBD
-
-```
-loginctl enable-linger <username>
-```
-
 
 ## License
 

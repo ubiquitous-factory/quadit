@@ -1,0 +1,24 @@
+[Unit]
+Description=quadit container management tool
+After=local-fs.target
+
+[Container]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+AutoUpdate=registry
+ContainerName=quadit
+Environment=XDG_RUNTIME_DIR=/run/user/%U HOME=%h
+Image=quay.io/ubiquitous-factory/quadit:v0.1.0
+PodmanArgs=--cgroups no-conmon --cidfile "%t/%n.ctr-id"
+SecurityLabelDisable=true
+Volume=quadit-volume:/opt
+Volume=%h/.quadit:/opt/mount
+Volume=/run/user/%U/podman/podman.sock:/run/podman/podman.sock
+
+[Service]
+Restart=always
+TimeoutStopSec=120
+ExecStartPre=/usr/bin/mkdir -p %h/.quadit
+
+[Install]
+# Start by default on boot
+WantedBy=multi-user.target default.target
