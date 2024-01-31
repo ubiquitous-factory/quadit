@@ -48,6 +48,7 @@ impl FileManager {
     }
 
     /// Gets the home location of the user currently running quadit
+    #[cfg(feature = "cli")]
     pub fn quadit_home() -> String {
         let mut dir = match dirs::home_dir() {
             Some(s) => s,
@@ -72,6 +73,10 @@ impl FileManager {
             std::process::exit(1);
         };
 
+        #[cfg(not(feature = "cli"))]
+        pub fn quadit_home() -> String {
+            "/opt/config".to_string()
+        }
         // TODO: OS specific but that's OK for linux
         dir.as_path().display().to_string()
     }
@@ -203,16 +208,12 @@ impl FileManager {
             );
             return Err(msg);
         }
-        let mut config_path = match dirs::home_dir() {
-            Some(p) => p,
-            None => PathBuf::new(),
-        };
-        config_path.push(".config/containers/systemd");
-        config_path.push(path.file_name().unwrap_or_default());
+        let mut cont_path = FileManager::get_container_path();
+        cont_path.push(path.file_name().unwrap_or_default());
 
-        let cpath = config_path.clone();
+        let cpath = cont_path.clone();
         let dpath = definition_path.clone();
-        match fs::copy(definition_path, config_path) {
+        match fs::copy(definition_path, cont_path) {
             Ok(_) => {}
             Err(e) => {
                 let msg = format!(
@@ -228,6 +229,25 @@ impl FileManager {
         }
 
         Ok(cpath.as_path().display().to_string())
+    }
+
+    #[cfg(feature = "cli")]
+    fn get_container_path() -> PathBuf {
+        let mut config_path = match dirs::home_dir() {
+            Some(p) => p,
+            None => PathBuf::new(),
+        };
+        config_path.push(FileManager::podman_unit_path());
+        config_path
+        // config_path.push(path.file_name().unwrap_or_default())
+    }
+
+    #[cfg(not(feature = "cli"))]
+    fn get_container_path() -> PathBuf {
+        let mut config_path = PathBuf::new();
+        config_path.push("/opt/containers");
+        config_path
+        // config_path.push(path.file_name().unwrap_or_default())
     }
 }
 
@@ -261,30 +281,26 @@ mod tests {
         let target_path = "test.container";
         fs::create_dir(jobdir).unwrap();
 
-        let mut config_path = match dirs::home_dir() {
-            Some(p) => p,
-            None => PathBuf::new(),
-        };
-        config_path.push(".config/containers/systemd");
-        if !config_path.exists() {
-            let dir = config_path.clone();
+        let mut cont_path = FileManager::get_container_path();
+        if !cont_path.exists() {
+            let dir = cont_path.clone();
             fs::create_dir_all(dir).unwrap_or_else(|why| {
                 println!("! {:?}", why.kind());
             });
         }
-        config_path.push(target_path);
+        cont_path.push(target_path);
 
         let file_path: PathBuf = [jobdir, "test.container"].iter().collect();
         let rm_file_path: PathBuf = [jobdir, "test.container"].iter().collect();
         File::create(file_path).unwrap();
 
         let s = FileManager::deploy_container_file(jobdir, target_path).unwrap();
-        println!("{}", config_path.as_path().display());
+        println!("{}", cont_path.as_path().display());
         println!("{}", s);
-        assert!(config_path.exists());
+        assert!(cont_path.exists());
         fs::remove_file(rm_file_path).unwrap();
         fs::remove_dir(jobdir).unwrap();
-        fs::remove_file(config_path).unwrap();
+        fs::remove_file(cont_path).unwrap();
     }
 
     #[test]

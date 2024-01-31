@@ -11,13 +11,14 @@ Image=quay.io/ubiquitous-factory/quadit:v0.1.0
 PodmanArgs=--cgroups no-conmon --cidfile "%t/%n.ctr-id"
 SecurityLabelDisable=true
 Volume=quadit-volume:/opt
-Volume=%h/.quadit:/opt/mount
-Volume=/run/user/%U/podman/podman.sock:/run/podman/podman.sock
+Volume=%h/.quadit:/opt/config
+Volume=%h/.config/containers/systemd:/opt/containers
 
 [Service]
 Restart=always
 TimeoutStopSec=120
 ExecStartPre=/usr/bin/mkdir -p %h/.quadit
+ExecStartPre=/usr/bin/mkdir -p %h/.config/containers/systemd
 
 [Install]
 # Start by default on boot
