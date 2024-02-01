@@ -1,10 +1,10 @@
 [Unit]
-Description=The sleep container
+Description=The hello container
 After=local-fs.target
 
 [Container]
 Image=registry.access.redhat.com/ubi9-minimal:latest
-Exec=sleep 2000
+Exec=while [ true ]; do echo "hello"; sleep 5; done
 
 [Install]
 # Start by default on boot

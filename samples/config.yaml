@@ -3,6 +3,6 @@ configReload:
   schedule: "1/120 * * * * *"
 targetConfigs:
 - url: https://github.com/ubiquitous-factory/quadit
-  targetPath: "samples"
+  targetPath: "samples/helloworld"
   branch: "main"
   schedule: "1/10 * * * * *"
