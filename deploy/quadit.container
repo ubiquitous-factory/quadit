@@ -7,18 +7,28 @@ Environment=PODMAN_SYSTEMD_UNIT=%n
 AutoUpdate=registry
 ContainerName=quadit
 Environment=XDG_RUNTIME_DIR=/run/user/%U HOME=%h
-Image=quay.io/ubiquitous-factory/quadit:v0.1.0
-PodmanArgs=--cgroups no-conmon --cidfile "%t/%n.ctr-id"
+Image=quay.io/ubiquitous-factory/quadit:v0.1.2
 SecurityLabelDisable=true
 Volume=quadit-volume:/opt
 Volume=%h/.quadit:/opt/config
 Volume=%h/.config/containers/systemd:/opt/containers
-
+Volume=/run/user/%U/podman/podman.sock:/run/podman/podman.sock
+# Need to validate if --cgroups no-conmon --cidfile "%t/%n.ctr-id" options are provided by Container
+PodmanArgs=--init-path /usr/sbin/init --pid host --privileged
+Mount=type=tmpfs,destination=/run/user/1000,rw=true
+Mount=type=bind,source=/sys/fs/cgroup,destination=/sys/fs/cgroup,ro=true
+Mount=type=bind,source=/run/user/1000/systemd,destination=/run/user/1000/systemd,rw=true
+UserNS=keep-id
+Environment=JOB_PATH=/tmp
 [Service]
 Restart=always
 TimeoutStopSec=120
 ExecStartPre=/usr/bin/mkdir -p %h/.quadit
 ExecStartPre=/usr/bin/mkdir -p %h/.config/containers/systemd
+# Need to validate if these options are managed by Container
+# ExecStartPre=/bin/rm -f %t/%n.ctr-id
+# ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%n.ctr-id
+# ExecStopPost=/usr/bin/podman rm -f --ignore --cidfile=%t/%n.ctr-id
 
 [Install]
 # Start by default on boot

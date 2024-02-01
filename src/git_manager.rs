@@ -5,7 +5,7 @@
 
 use std::{
     collections::HashMap,
-    fs::metadata,
+    fs::{metadata},
     path::PathBuf,
     sync::{Mutex, OnceLock},
 };
@@ -77,14 +77,19 @@ impl GitManager {
                 };
 
                 if hm.get(&uuid).is_none() {
+                    let mut job_path = PathBuf::new();
+                    job_path.push(FileManager::job_path());
+                    job_path.push( FileManager::job_folder());
+                    job_path.push( uuid.to_string());
+                    // let job_path = format!("{}jobs/{}", FileManager::job_path(), uuid); 
                     info!(
-                        "{}: Job creating for {} branch: {}, path: {}",
-                        uuid, this_conf.url, this_conf.branch, this_conf.target_path
+                        "{}: Job creating for {} branch: {}, path: {} in dir {}",
+                        uuid, this_conf.url, this_conf.branch, this_conf.target_path, job_path.as_path().display()
                     );
-                    let job_path = format!("jobs/{}", uuid); 
+                   
                     let gitsync = quaditsync::GitSync {
                         repo: this_conf.url.clone(),
-                        dir: job_path.into(),
+                        dir: job_path,
                         ..Default::default()
                     };
 
@@ -123,12 +128,15 @@ impl GitManager {
                                 "{}: Running sync for {} branch: {}, path: {}",
                                 uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path
                             );
-                            let job_path = format!("jobs/{}", uuid); 
+                            let mut internal_job_path = PathBuf::new();
+                            internal_job_path.push(FileManager::job_path());
+                            internal_job_path.push( FileManager::job_folder());
+                            internal_job_path.push(uuid.to_string());
                             //let first_job = FileManager::job_exists(uuid);
-
+                            let tpath = internal_job_path.clone();
                             let quaditsync = quaditsync::GitSync {
                                 repo: internal_gc.url.clone(),
-                                dir: job_path.clone().into(),
+                                dir: internal_job_path,
                                 ..Default::default()
                             };
 
@@ -148,9 +156,10 @@ impl GitManager {
 
                              // different commit ids so we are going to refresh the container only if the file has changed.
                             // if !commitids.0.eq(&commitids.1) {
+                                
                                 info!("{}: Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
-                                if GitManager::process_repo(&job_path, &internal_gc.target_path, uuid) {
-                                    info!("{}: Completed deployment of {}", uuid, &internal_gc.target_path);     
+                                if GitManager::process_repo(tpath.to_str().unwrap_or_default(), &internal_gc.target_path, uuid) {
+                                    info!("{}: Completed deployment of {} to {}", uuid, &internal_gc.target_path, tpath.to_str().unwrap_or_default());     
                                 } else {
                                     error!("{}: Failed deployment of {}", uuid, &internal_gc.target_path);
                                 }
@@ -174,6 +183,8 @@ impl GitManager {
         let mut mdpath = PathBuf::new();
         mdpath.push(job_path);
         mdpath.push(target_path);
+
+        let foldermdpath = mdpath.clone();
 
         let md = match metadata(mdpath) {
             Ok(m) => m,
@@ -213,15 +224,15 @@ impl GitManager {
                 Err(e) => error!("{}: Failed to restart: {} {}", uuid, unit, e),
             };
         } else if md.is_dir() {
-            info!("{}: Processing Directory {}", uuid, target_path);
-            match FileManager::get_files_in_directory(target_path) {
+            info!("{}: Processing Directory {}", uuid, foldermdpath.as_path().display());
+            match FileManager::get_files_in_directory(foldermdpath.to_str().unwrap_or_default()) {
                 Ok(file_names) => {
                     for file_name in file_names {
-                        let file_path = format!("{}/{}", target_path, file_name);
+                        let file_path = format!("{}/{}", foldermdpath.as_path().display(), file_name);
                         GitManager::process_repo(job_path, &file_path, uuid);
                     }
                 }
-                Err(e) => error!("Error: {}", e),
+                Err(e) => error!("{}: Error: {}",uuid, e),
             }
         }
         true

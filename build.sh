@@ -1,6 +1,6 @@
 #! /bin/bash
 
-tag=v0.1.1
+tag=v0.1.2
 img=quay.io/ubiquitous-factory/quadit:$tag
 podman manifest create -a $img
 

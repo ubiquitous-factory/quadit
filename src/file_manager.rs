@@ -19,9 +19,17 @@ impl FileManager {
             var("PODMAN_UNIT_PATH").unwrap_or(".config/containers/systemd".to_string())
         })
     }
-    fn job_folder() -> &'static str {
+
+    /// gets the name of the job folder
+    pub fn job_folder() -> &'static str {
         static JOB_FOLDER: OnceLock<String> = OnceLock::new();
         JOB_FOLDER.get_or_init(|| var("JOB_FOLDER").unwrap_or("jobs".to_string()))
+    }
+
+    /// Gets the root to the root of the job path folder.
+    pub fn job_path() -> &'static str {
+        static JOB_PATH: OnceLock<String> = OnceLock::new();
+        JOB_PATH.get_or_init(|| var("JOB_PATH").unwrap_or("".to_string()))
     }
     /// Simple wrapper around the `read_to_string`
     pub fn readfile(file_path: String) -> Result<String, std::io::Error> {
@@ -72,15 +80,14 @@ impl FileManager {
             );
             std::process::exit(1);
         };
-
-        #[cfg(not(feature = "cli"))]
-        pub fn quadit_home() -> String {
-            "/opt/config".to_string()
-        }
         // TODO: OS specific but that's OK for linux
         dir.as_path().display().to_string()
     }
 
+    #[cfg(not(feature = "default"))]
+    pub fn quadit_home() -> String {
+        "/opt/config".to_string()
+    }
     /// Loads the quadit config based on the resolved location.
     pub fn load_quadit_config() -> Result<String, std::io::Error> {
         FileManager::readfile(FileManager::resolve_quadit_config_location())
