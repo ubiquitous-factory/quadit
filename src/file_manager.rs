@@ -13,6 +13,8 @@ const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "ku
 pub struct FileManager {}
 
 impl FileManager {
+
+    #[cfg(feature = "cli")]
     fn podman_unit_path() -> &'static str {
         static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
         PODMAN_UNIT_PATH.get_or_init(|| {
@@ -103,11 +105,12 @@ impl FileManager {
                 .to_str()
                 .unwrap_or_default(),
         ) {
-            error!(
+            let msg = 
+            format!(
                 "Target path MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {}",
                 target_path
             );
-            return Err("File Extension unknown".to_string());
+            return Err(msg);
         }
         path.set_extension("service");
         match path.file_name() {
@@ -130,11 +133,7 @@ impl FileManager {
         definition_path.push(target_path);
 
         let path = Path::new(target_path);
-        let mut config_path = match dirs::home_dir() {
-            Some(p) => p,
-            None => PathBuf::new(),
-        };
-        config_path.push(FileManager::podman_unit_path());
+        let mut config_path = FileManager::get_container_path();
         config_path.push(path.file_name().unwrap_or_default());
 
         FileManager::are_identical(
@@ -143,6 +142,7 @@ impl FileManager {
         )
     }
 
+    /// Collects a directory contents as a vector of strings
     pub fn get_files_in_directory(path: &str) -> Result<Vec<String>, anyhow::Error> {
         // Get a list of all entries in the folder
         let entries = fs::read_dir(path)?;
@@ -246,7 +246,7 @@ impl FileManager {
         };
         config_path.push(FileManager::podman_unit_path());
         config_path
-        // config_path.push(path.file_name().unwrap_or_default())
+       
     }
 
     #[cfg(not(feature = "cli"))]
@@ -254,7 +254,6 @@ impl FileManager {
         let mut config_path = PathBuf::new();
         config_path.push("/opt/containers");
         config_path
-        // config_path.push(path.file_name().unwrap_or_default())
     }
 }
 

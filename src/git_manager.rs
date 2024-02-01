@@ -225,6 +225,7 @@ impl GitManager {
             };
         } else if md.is_dir() {
             info!("{}: Processing Directory {}", uuid, foldermdpath.as_path().display());
+            
             match FileManager::get_files_in_directory(foldermdpath.to_str().unwrap_or_default()) {
                 Ok(file_names) => {
                     for file_name in file_names {
