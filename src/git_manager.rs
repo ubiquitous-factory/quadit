@@ -86,7 +86,7 @@ impl GitManager {
                         "{}: Job creating for {} branch: {}, path: {} in dir {}",
                         uuid, this_conf.url, this_conf.branch, this_conf.target_path, job_path.as_path().display()
                     );
-                   
+
                     let gitsync = quaditsync::GitSync {
                         repo: this_conf.url.clone(),
                         dir: job_path,
@@ -154,18 +154,12 @@ impl GitManager {
                                 }
                             };
 
-                             // different commit ids so we are going to refresh the container only if the file has changed.
-                            // if !commitids.0.eq(&commitids.1) {
-                                
                                 info!("{}: Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
                                 if GitManager::process_repo(tpath.to_str().unwrap_or_default(), &internal_gc.target_path, uuid) {
                                     info!("{}: Completed deployment of {} to {}", uuid, &internal_gc.target_path, tpath.to_str().unwrap_or_default());     
                                 } else {
                                     error!("{}: Failed deployment of {}", uuid, &internal_gc.target_path);
                                 }
-                            // } else {
-                            //     info!("{}: Ignored {}", uuid, commitids.0)
-                            // }
 
                             info!("{}: Next git run {:?}",uuid, ts);
                         }
@@ -224,16 +218,21 @@ impl GitManager {
                 Err(e) => error!("{}: Failed to restart: {} {}", uuid, unit, e),
             };
         } else if md.is_dir() {
-            info!("{}: Processing Directory {}", uuid, foldermdpath.as_path().display());
+            info!(
+                "{}: Processing Directory {}",
+                uuid,
+                foldermdpath.as_path().display()
+            );
 
             match FileManager::get_files_in_directory(foldermdpath.to_str().unwrap_or_default()) {
                 Ok(file_names) => {
                     for file_name in file_names {
-                        let file_path = format!("{}/{}", foldermdpath.as_path().display(), file_name);
+                        let file_path =
+                            format!("{}/{}", foldermdpath.as_path().display(), file_name);
                         GitManager::process_repo(job_path, &file_path, uuid);
                     }
                 }
-                Err(e) => error!("{}: Error: {}",uuid, e),
+                Err(e) => error!("{}: Error: {}", uuid, e),
             }
         }
         true

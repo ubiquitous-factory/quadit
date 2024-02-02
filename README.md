@@ -24,7 +24,7 @@ Please evaluate the following matrix to understand which one would better suit y
 
 ||fetchit|quadit|notes|
 |---|---|---|---|
-|simple file transfer|<div class="greencircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
+|simple file transfer|<div class="greencircle">&nbsp;</div>|<div class="redcircle"></div>|May be considered as a feature if required|
 |ansible|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
 |kube|<div class="greencircle"></div>|<div class="redcircle"></div>|Raw yaml files are not a quadit goal|
 |raw|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|

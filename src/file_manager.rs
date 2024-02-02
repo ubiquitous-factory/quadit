@@ -13,7 +13,6 @@ const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "ku
 pub struct FileManager {}
 
 impl FileManager {
-
     #[cfg(feature = "cli")]
     fn podman_unit_path() -> &'static str {
         static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
@@ -105,8 +104,7 @@ impl FileManager {
                 .to_str()
                 .unwrap_or_default(),
         ) {
-            let msg = 
-            format!(
+            let msg = format!(
                 "Target path MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {}",
                 target_path
             );
@@ -246,7 +244,6 @@ impl FileManager {
         };
         config_path.push(FileManager::podman_unit_path());
         config_path
-       
     }
 
     #[cfg(not(feature = "cli"))]
