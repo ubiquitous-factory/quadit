@@ -24,23 +24,21 @@ Please evaluate the following matrix to understand which one would better suit y
 
 ||fetchit|quadit|notes|
 |---|---|---|---|
-|simple file transfer|<div class="greencircle">&nbsp;</div>|<div class="redcircle"></div>|May be considered as a feature if required|
-|ansible|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
-|kube|<div class="greencircle"></div>|<div class="redcircle"></div>|Raw yaml files are not a quadit goal|
-|raw|<div class="greencircle"></div>|<div class="redcircle"></div>|Not a quadit goal|
-|plain systemd files|<div class="greencircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
-|inbuilt CLI|<div class="redcircle"></div>|<div class="greencircle"></div>|Main design goal to improve devops experience|
-|user quadlet|<div class="redcircle"></div>|<div class="greencircle"></div>|Not available in fetchit [See fetchit issue](https://github.com/containers/fetchit/issues/311)|
-|root quadlet|<div class="redcircle"></div>|<div class="redcircle"></div>|May be considered as a feature if required|
-|systemd stop|<div class="redcircle"></div>|<div class="greencircle"></div>|[Code exists](https://github.com/containers/fetchit/blob/main/method_containers/systemd/systemd-script#L51) in fetchit but not surfaced in config|
-|systemd start|<div class="redcircle"></div>|<div class="greencircle"></div>|Not implemented in `fetchit`|
-|auto-update|<div class="greencircle"></div>|<div class="redcircle"></div>|quadit is targeting auto configuration but work is yet to commence|
-|.kube|<div class="redcircle"></div>|<div class="yellowcircle"></div>|Standard quadlet file type - Implementation in progress|
-|.volume|<div class="redcircle"></div>|<div class="greencircle"></div>|Standard quadlet file type|
-|.network|<div class="redcircle"></div>|<div class="greencircle"></div>|Standard quadlet file type|
-|.pod|<div class="redcircle"></div>|<div class="greencircle"></div>|Standard quadlet file type|
-|.container|<div class="redcircle"></div>|<div class="greencircle"></div>|Standard quadlet file type|
-
+|simple file transfer|yes|no|May be considered as a feature if required|
+|ansible|yes|no|Not a quadit goal|
+|kube|yes|no|Raw yaml files are not a quadit goal|
+|raw|yes|no|Not a quadit goal|
+|plain systemd files|yes|no|May be considered as a feature if required|
+|user quadlet|no|yes|Not available in fetchit [See fetchit issue](https://github.com/containers/fetchit/issues/311)|
+|root quadlet|no|no|May be considered as a feature if required|
+|systemd stop|no|yes|[Code exists](https://github.com/containers/fetchit/blob/main/method_containers/systemd/systemd-script#L51) in fetchit but not surfaced in config|
+|systemd start|no|yes|Not implemented in `fetchit`|
+|auto-update|yes|no|quadit is targeting auto configuration but work is yet to commence|
+|.kube|no|yes|Standard quadlet file type|
+|.volume|no|yes|Standard quadlet file type|
+|.network|no|yes|Standard quadlet file type|
+|.pod|no|yes|Standard quadlet file type|
+|.container|no|yes|Standard quadlet file type|
 
 ## install
 
@@ -50,6 +48,30 @@ mkdir ~/.quadit
 curl -o ~/.quadit https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/samples/config.yaml
 curl -o ~/.config/containers/systemd https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/deploy/quadit.container
 loginctl enable-linger $USER
+```
+
+### environment variables
+None of these environment variables should need tweaking but the options are documented as they are available.
+
+|Name|Default|Description|
+|---|---|---|
+|PODMAN_UNIT_PATH|`$HOME/.config/containers/systemd`|The location where the container files should be written on the host machine|
+|JOB_PATH|<Empty>|Left empty for testing but set to `/tmp` in the `quadit.container`|
+|JOB_FOLDER|`jobs`|The name of the folder to save jobs.|
+|XDG_RUNTIME_DIR|`/run/user/%U`|Used by systemd to find a user-specific directory in which it can store small temporary files|
+|HOME|%u|Set by systemd parameter the home directory|
+|PODMAN_SYSTEMD_UNIT|%n|Set by systemd - the name of the unit|
+
+## Supported Versions
+
+* podman >= 4.8.3
+* fedora >= 39
+* Red Hat Enterprise Linux >= 8
+* ubuntu >= 22.04
+
+## development service
+```
+cargo install quadit
 ```
 
 ## License

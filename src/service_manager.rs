@@ -10,8 +10,6 @@ const USER: bool = true;
 pub struct ServiceManager {}
 
 impl ServiceManager {
-    // env::set_var("SYSTEMCTL_PATH", "VALUE");
-
     /// Creates an instance of the QuaditManager and startes it.
     pub async fn run() -> Result<(), Error> {
         let serviceconf = FileManager::load_quadit_config()?;
