@@ -2,6 +2,7 @@ use anyhow::Error;
 use std::fs;
 use std::process::{Child, ExitStatus};
 use std::time::Duration;
+use tracing::instrument;
 
 use crate::{file_manager::FileManager, quadit_manager::QuaditManager};
 
@@ -11,6 +12,7 @@ pub struct ServiceManager {}
 
 impl ServiceManager {
     /// Creates an instance of the QuaditManager and startes it.
+    #[instrument]
     pub async fn run() -> Result<(), Error> {
         let serviceconf = FileManager::load_quadit_config()?;
         let quadit = QuaditManager::from_yaml(serviceconf).await?;

@@ -1,12 +1,21 @@
+use std::fmt;
+
 use anyhow::Ok;
+use tracing::instrument;
 
 use crate::{config_quadit::ConfigQuadit, git_manager::GitManager, reload_manager::ReloadManager};
 /// The manager of managers responsible for loading config and starting the different schedulers.
 pub struct QuaditManager {
     /// The git scheduler
-    git_manager: GitManager,
+    pub git_manager: GitManager,
     /// The scheduler responsible for loading git commands
-    reload_manager: Option<ReloadManager>,
+    pub reload_manager: Option<ReloadManager>,
+}
+
+impl fmt::Debug for QuaditManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Quadit Manager")
+    }
 }
 
 impl QuaditManager {
@@ -14,6 +23,7 @@ impl QuaditManager {
     /// # Arguments
     ///
     /// * `conf` - A String slice that contains the complete `config.yaml`
+    #[instrument]
     pub async fn from_yaml(conf: String) -> Result<QuaditManager, anyhow::Error> {
         let quad = ConfigQuadit::from_yaml(conf)?;
         if quad.config_reload.is_some() {
@@ -39,6 +49,7 @@ impl QuaditManager {
     // }
 
     /// Starts the scheduler services
+    #[instrument]
     pub async fn start(self) -> Result<(), anyhow::Error> {
         self.git_manager.start().await?;
         if self.reload_manager.is_some() {

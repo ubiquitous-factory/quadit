@@ -7,13 +7,7 @@ use quadit::cli::QuaditCli;
 use quadit::service_manager::ServiceManager;
 
 #[tokio::main]
-async fn main() {
-    if let Err(e) = try_main().await {
-        eprintln!("Error: {:#?}", e);
-        std::process::exit(1)
-    }
-}
-async fn try_main() -> Result<()> {
+async fn main() -> Result<()> {
     if dotenvy::dotenv().is_ok() {
         println!("Using .env")
     }

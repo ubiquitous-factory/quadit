@@ -3,22 +3,30 @@
 //     sync::{Mutex, OnceLock},
 // };
 
+use log::{error, info, warn};
 use std::{
     collections::HashMap,
+    fmt,
     fs::metadata,
     path::PathBuf,
     sync::{Mutex, OnceLock},
 };
-
-use log::{error, info, warn};
+use tracing::instrument;
 
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::{config_git::ConfigGit, file_manager::FileManager, service_manager::ServiceManager};
 /// Manages the check out and syncing of each `GitConfig` using async tasks.
+
 pub struct GitManager {
     /// The scheduler responsible for executing a job per entry in `config.yaml`
     scheduler: JobScheduler,
+}
+
+impl fmt::Debug for GitManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Git Manager")
+    }
 }
 
 impl GitManager {
@@ -33,6 +41,7 @@ impl GitManager {
     /// # Arguments
     ///
     /// * `target_configs` - A vector of `ConfigGit` objects
+    #[instrument]
     pub async fn from_target_configs(
         target_configs: Vec<ConfigGit>,
     ) -> Result<GitManager, JobSchedulerError> {
@@ -52,6 +61,7 @@ impl GitManager {
     /// A shared object between the git configurations and the jobs.
     /// Used for accessing data across async calls.
     /// Beware three arrow dragons!!
+    #[instrument]
     fn config_git_list() -> &'static Mutex<HashMap<uuid::Uuid, ConfigGit>> {
         static HASHMAP: OnceLock<Mutex<HashMap<uuid::Uuid, ConfigGit>>> = OnceLock::new();
         let hm: HashMap<uuid::Uuid, ConfigGit> = HashMap::new();
@@ -62,117 +72,154 @@ impl GitManager {
     /// # Arguments
     ///
     /// * `conf` - A`ConfigGit` object
+    #[instrument]
     pub async fn add_config(&mut self, conf: ConfigGit) -> Result<uuid::Uuid, JobSchedulerError> {
-        let sched = conf.schedule.clone();
-
         self.scheduler
-            .add(Job::new_async(sched.as_str(), move |uuid, mut l| {
-                let this_conf = conf.clone();
-                let mut hm = match GitManager::config_git_list().lock() {
-                    Ok(g) => g,
-                    Err(e) => {
-                        error!("Failed to lock in scheduler {}: {}", uuid, e);
-                        std::process::exit(1);
-                    }
+            .add(GitManager::create_job(conf).await?)
+            .await
+    }
+
+    #[instrument]
+    pub async fn create_job(conf: ConfigGit) -> Result<Job, JobSchedulerError> {
+        let sched = conf.schedule.clone();
+        Job::new_async(sched.as_str(), move |uuid, mut l| {
+            let this_conf = conf.clone();
+            let mut hm = match GitManager::config_git_list().lock() {
+                Ok(g) => g,
+                Err(e) => {
+                    error!("Failed to lock in scheduler {}: {}", uuid, e);
+                    std::process::exit(1);
+                }
+            };
+
+            if hm.get(&uuid).is_none() {
+                let mut job_path = PathBuf::new();
+                job_path.push(FileManager::job_path());
+                job_path.push(FileManager::job_folder());
+                job_path.push(uuid.to_string());
+                // let job_path = format!("{}jobs/{}", FileManager::job_path(), uuid);
+                info!(
+                    "{}: Job creating for {} branch: {}, path: {} in dir {}",
+                    uuid,
+                    this_conf.url,
+                    this_conf.branch,
+                    this_conf.target_path,
+                    job_path.as_path().display()
+                );
+
+                let gitsync = quaditsync::GitSync {
+                    repo: this_conf.url.clone(),
+                    dir: job_path,
+                    ..Default::default()
                 };
 
-                if hm.get(&uuid).is_none() {
-                    let mut job_path = PathBuf::new();
-                    job_path.push(FileManager::job_path());
-                    job_path.push( FileManager::job_folder());
-                    job_path.push( uuid.to_string());
-                    // let job_path = format!("{}jobs/{}", FileManager::job_path(), uuid); 
-                    info!(
-                        "{}: Job creating for {} branch: {}, path: {} in dir {}",
-                        uuid, this_conf.url, this_conf.branch, this_conf.target_path, job_path.as_path().display()
-                    );
-
-                    let gitsync = quaditsync::GitSync {
-                        repo: this_conf.url.clone(),
-                        dir: job_path,
-                        ..Default::default()
-                    };
-
-                    match gitsync.bootstrap() {
-                        Ok(_) => {
-                            hm.insert(uuid, this_conf);
-                            info!("{}: Successfully created job. Cloned {} to {}", uuid, gitsync.repo, gitsync.dir.as_path().display().to_string());
-                            None
-                        }
-                        Err(e) => {
-                            error!(
-                                "Failed to bootstrap for {} url: {} branch: {}, path: {} \n {:?}",
-                                uuid, this_conf.url, this_conf.branch, this_conf.target_path, e
-                            );
-                            Some(e)
-                        }
-                    };
-                }
-
-                Box::pin(async move {
-                    let next_tick = l.next_tick_for_job(uuid).await;
-                    match next_tick {
-                        Ok(Some(ts)) => {
-                            info!("{}: Getting GitConfig", uuid);
-                            let internal_hm = match GitManager::config_git_list().lock() {
-                                Ok(g) => g,
-                                Err(e) => {
-                                    error!("Failed to lock in pin {}: {}", uuid, e);
-                                    std::process::exit(1);
-                                }
-                            };
-                            // can force the get here as we have inserted above
-                            let internal_gc = internal_hm.get(&uuid).unwrap();
-
-                            info!(
-                                "{}: Running sync for {} branch: {}, path: {}",
-                                uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path
-                            );
-                            let mut internal_job_path = PathBuf::new();
-                            internal_job_path.push(FileManager::job_path());
-                            internal_job_path.push( FileManager::job_folder());
-                            internal_job_path.push(uuid.to_string());
-                            //let first_job = FileManager::job_exists(uuid);
-                            let tpath = internal_job_path.clone();
-                            let quaditsync = quaditsync::GitSync {
-                                repo: internal_gc.url.clone(),
-                                dir: internal_job_path,
-                                ..Default::default()
-                            };
-
-                            let commitids = match quaditsync.sync() {
-                                Ok(s) => {
-                                    info!("{}: Sync complete. original oid: {}, new oid: {}", uuid, s.0, s.1);
-                                    s
-                                },
-                                Err(e) => {
-                                    error!(
-                                        "Failed to quaditsync for {} url: {} branch: {}, path: {} \n {:?}",
-                                        uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path, e
-                                    );
-                                    return;
-                                }
-                            };
-
-                                info!("{}: Updated {}, branch: {}, path: {} with {}",uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path,commitids.1);
-                                if GitManager::process_repo(tpath.to_str().unwrap_or_default(), &internal_gc.target_path, uuid) {
-                                    info!("{}: Completed deployment of {} to {}", uuid, &internal_gc.target_path, tpath.to_str().unwrap_or_default());     
-                                } else {
-                                    error!("{}: Failed deployment of {}", uuid, &internal_gc.target_path);
-                                }
-
-                            info!("{}: Next git run {:?}",uuid, ts);
-                        }
-                        _ => warn!("Could not get next tick for job"),
+                match gitsync.bootstrap() {
+                    Ok(_) => {
+                        hm.insert(uuid, this_conf);
+                        info!(
+                            "{}: Successfully created job. Cloned {} to {}",
+                            uuid,
+                            gitsync.repo,
+                            gitsync.dir.as_path().display().to_string()
+                        );
+                        None
                     }
-                })
-            })?)
-            .await
+                    Err(e) => {
+                        error!(
+                            "Failed to bootstrap for {} url: {} branch: {}, path: {} \n {:?}",
+                            uuid, this_conf.url, this_conf.branch, this_conf.target_path, e
+                        );
+                        Some(e)
+                    }
+                };
+            }
+
+            Box::pin(async move {
+                let next_tick = l.next_tick_for_job(uuid).await;
+                match next_tick {
+                    Ok(Some(ts)) => {
+                        info!("{}: Getting GitConfig", uuid);
+                        let internal_hm = match GitManager::config_git_list().lock() {
+                            Ok(g) => g,
+                            Err(e) => {
+                                error!("Failed to lock in pin {}: {}", uuid, e);
+                                std::process::exit(1);
+                            }
+                        };
+                        // can force the get here as we have inserted above
+                        let internal_gc = internal_hm.get(&uuid).unwrap();
+
+                        info!(
+                            "{}: Running sync for {} branch: {}, path: {}",
+                            uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path
+                        );
+                        let mut internal_job_path = PathBuf::new();
+                        internal_job_path.push(FileManager::job_path());
+                        internal_job_path.push(FileManager::job_folder());
+                        internal_job_path.push(uuid.to_string());
+                        //let first_job = FileManager::job_exists(uuid);
+                        let tpath = internal_job_path.clone();
+                        let quaditsync = quaditsync::GitSync {
+                            repo: internal_gc.url.clone(),
+                            dir: internal_job_path,
+                            ..Default::default()
+                        };
+
+                        let commitids = match quaditsync.sync() {
+                            Ok(s) => {
+                                info!(
+                                    "{}: Sync complete. original oid: {}, new oid: {}",
+                                    uuid, s.0, s.1
+                                );
+                                s
+                            }
+                            Err(e) => {
+                                error!(
+                                    "Failed to quaditsync for {} url: {} branch: {}, path: {} \n {:?}",
+                                    uuid, internal_gc.url, internal_gc.branch, internal_gc.target_path, e
+                                );
+                                return;
+                            }
+                        };
+
+                        info!(
+                            "{}: Updated {}, branch: {}, path: {} with {}",
+                            uuid,
+                            internal_gc.url,
+                            internal_gc.branch,
+                            internal_gc.target_path,
+                            commitids.1
+                        );
+                        if GitManager::process_repo(
+                            tpath.to_str().unwrap_or_default(),
+                            &internal_gc.target_path,
+                            uuid,
+                        ) {
+                            info!(
+                                "{}: Completed deployment of {} to {}",
+                                uuid,
+                                &internal_gc.target_path,
+                                tpath.to_str().unwrap_or_default()
+                            );
+                        } else {
+                            error!(
+                                "{}: Failed deployment of {}",
+                                uuid, &internal_gc.target_path
+                            );
+                        }
+
+                        info!("{}: Next git run {:?}", uuid, ts);
+                    }
+                    _ => warn!("Could not get next tick for job"),
+                }
+            })
+        })
     }
 
     /// Processes the repo based on the target path supplied.
     /// If it's a directory it iterates through the top level of the directory
     /// Multi level structures should be implemented as different targets in the `config.yaml`
+    #[instrument]
     fn process_repo(job_path: &str, target_path: &str, uuid: uuid::Uuid) -> bool {
         let mut mdpath = PathBuf::new();
         mdpath.push(job_path);
@@ -238,8 +285,32 @@ impl GitManager {
         true
     }
     /// Starts the `GitManager scheduler`
+    #[instrument]
     pub async fn start(&self) -> Result<(), JobSchedulerError> {
         info!("Starting schedule for all git configs");
         self.scheduler.start().await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::GitManager;
+    use crate::config_git::ConfigGit;
+    use claims::*;
+
+    #[tokio::test]
+    pub async fn test_creation() {
+        let cg = ConfigGit {
+            url: "https://github.com/ubiquitous-factory/quadit".to_string(),
+            target_path: "samples/helloworld".to_string(),
+            branch: "main".to_string(),
+            schedule: "1/1 * * * * *".to_string(),
+        };
+
+        let configs = vec![cg];
+        let gm = GitManager::from_target_configs(configs).await.unwrap();
+        let st = gm.start().await;
+        assert_ok!(st);
     }
 }
