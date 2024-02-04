@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod test {
 
-    use anyhow::Ok;
     // use claims::*;
     use quadit::{config_git::ConfigGit, git_manager::GitManager};
 
