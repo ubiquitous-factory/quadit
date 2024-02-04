@@ -13,8 +13,7 @@ mod test {
     use std::{env, path::PathBuf};
 
     use tokio_cron_scheduler::JobScheduler;
-    use tracing::{info, Level};
-    use tracing_subscriber::FmtSubscriber;
+    use tracing::info;
     // Needs multi_thread to test, otherwise it hangs on scheduler.add()
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 
