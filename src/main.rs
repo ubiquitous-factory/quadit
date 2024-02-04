@@ -1,4 +1,8 @@
+use std::{env, str::FromStr};
+
 use anyhow::Result;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
 #[cfg(feature = "cli")]
 use quadit::cli::QuaditCli;
@@ -12,18 +16,14 @@ async fn main() -> Result<()> {
         println!("Using .env")
     }
 
-    env_logger::builder()
-        .format(quadit::log_formatter)
-        .filter_level(log::LevelFilter::Info)
-        .parse_default_env()
-        .format_timestamp(None)
-        .format_target(false)
-        .format_module_path(false)
-        .format_level(true)
-        .target(env_logger::Target::Stdout)
-        .init();
-
-    // Run cli
+    let log_level = Level::from_str(
+        env::var("LOG_LEVEL")
+            .unwrap_or_else(|_| "info".to_string())
+            .as_str(),
+    )
+    .unwrap_or(Level::INFO);
+    let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
+    tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
     // more comments
     #[cfg(feature = "cli")]

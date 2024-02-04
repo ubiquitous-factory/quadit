@@ -1,3 +1,7 @@
+// The integration tests validate that the services can download a git repo
+// and then copy that file into a known location.
+// The status of the container is the responsibility of podman
+// and so is outside of the scope of quadit.
 #[cfg(test)]
 mod test {
 
@@ -17,18 +21,12 @@ mod test {
     // #[tokio::test]
     async fn test_schedule() {
         let uloc = "/tmp/quadit_test/.config/containers/systemd";
-        env::set_var("JOB_PATH", "/tmp");
+        env::set_var("JOB_PATH", "/tmp/quadit_test");
         env::set_var("PODMAN_UNIT_PATH", uloc);
 
         fs::remove_dir_all(uloc).unwrap_or_default();
 
         fs::create_dir_all("/tmp/quadit_test/.config/containers/systemd").unwrap();
-
-        let subscriber = FmtSubscriber::builder()
-            .with_max_level(Level::TRACE)
-            .finish();
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("Setting default subscriber failed");
 
         info!("Create scheduler");
         let scheduler = JobScheduler::new().await.unwrap();
@@ -48,17 +46,18 @@ mod test {
 
         let timer = timer::Timer::new();
         let (tx, rx) = channel();
+        // Timeouts in tests are never great but we need to be sure that we capture the
+        // scheduler running continuously to make sure there are no overwrite problems.
         let _guard = timer.schedule_with_delay(chrono::Duration::seconds(5), move || {
             // This closure is executed on the scheduler thread,
             // so we want to move it away asap.
-
             let _ignored = tx.send(()); // Avoid unwrapping here.
         });
 
         let _ = rx.recv();
 
         let mut pb = PathBuf::new();
-        pb.push("/tmp/jobs");
+        pb.push("/tmp/quadit_test/jobs");
         pb.push(uid.to_string());
         assert!(pb.exists());
 
@@ -67,44 +66,3 @@ mod test {
         assert!(p.exists());
     }
 }
-
-// #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-// async fn test_functions_in_sequence() {
-//     let subscriber = FmtSubscriber::builder()
-//         .with_max_level(Level::TRACE)
-//         .finish();
-//     tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
-//     env::set_var("JOB_PATH", "/tmp");
-//     env::set_var("PODMAN_UNIT_PATH", "/tmp/test/.config/containers/systemd");
-//     let test_yaml = r#"
-// configReload:
-//   configURL: https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/samples/config.yaml
-//   schedule: 1/120 * * * * *
-// targetConfigs:
-// - url: https://github.com/ubiquitous-factory/quadit
-//   targetPath: "samples/helloworld"
-//   branch: "main"
-//   schedule: 1/2 * * * * *
-// "#;
-
-//     let quadit = QuaditManager::from_yaml(test_yaml.to_string())
-//         .await
-//         .unwrap();
-
-//     quadit.start().await.unwrap();
-//     loop {
-//         std::thread::sleep(Duration::from_millis(100));
-//     }
-
-//     // let qm = qm_result.unwrap();
-//     // let st = qm.start().await;
-//     // assert_ok!(st);
-
-//     // let seconds = Duration::from_secs(10);
-//     // let start = SystemTime::now();
-//     // loop {
-//     //     std::thread::sleep(Duration::new(2, 0));
-
-//     //     //
-//     // }
-// }

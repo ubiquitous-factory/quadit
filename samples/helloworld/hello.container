@@ -4,7 +4,7 @@ After=local-fs.target
 
 [Container]
 Image=registry.access.redhat.com/ubi9-minimal:latest
-Exec=while [ true ]; do echo "hello"; sleep 5; done
+Exec=tail -f /dev/null
 
 [Install]
 # Start by default on boot

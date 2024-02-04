@@ -1,5 +1,3 @@
-use log::{error, info};
-
 use std::{
     env::var,
     fs::{self, File},
@@ -7,6 +5,8 @@ use std::{
     path::{Path, PathBuf},
     sync::OnceLock,
 };
+
+use tracing::{error, info, instrument};
 
 const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "kube"];
 /// Manages all the file system interactions
@@ -22,23 +22,27 @@ impl FileManager {
     }
 
     /// gets the name of the job folder
+    #[instrument(level = "trace")]
     pub fn job_folder() -> &'static str {
         static JOB_FOLDER: OnceLock<String> = OnceLock::new();
         JOB_FOLDER.get_or_init(|| var("JOB_FOLDER").unwrap_or("jobs".to_string()))
     }
 
     /// Gets the root to the root of the job path folder.
+    #[instrument(level = "trace")]
     pub fn job_path() -> &'static str {
         static JOB_PATH: OnceLock<String> = OnceLock::new();
         JOB_PATH.get_or_init(|| var("JOB_PATH").unwrap_or("".to_string()))
     }
     /// Simple wrapper around the `read_to_string`
+    #[instrument(level = "trace")]
     pub fn readfile(file_path: String) -> Result<String, std::io::Error> {
         info!("Loading: {}", file_path);
         fs::read_to_string(file_path)
     }
 
     /// Generates the location of the quadit config.
+    #[instrument(level = "trace")]
     pub fn resolve_quadit_config_location() -> String {
         let loc = format!("{}/{}", FileManager::quadit_home(), "config.yaml");
         info!("Using config location : {}", loc);
@@ -49,6 +53,7 @@ impl FileManager {
     /// Used to validate if this is the first time the job has ran.
     /// # Arguments
     /// `uuid` - The uuid of the job - Usually `xxxxxxxx-xxxx-4xxx-Nxxx-xxxxxxxxxxxx`.
+    #[instrument(level = "trace")]
     pub fn job_exists(uuid: uuid::Uuid) -> bool {
         let mut pb = PathBuf::new();
         pb.push(FileManager::job_folder());
@@ -90,11 +95,13 @@ impl FileManager {
         "/opt/config".to_string()
     }
     /// Loads the quadit config based on the resolved location.
+    #[instrument(level = "trace")]
     pub fn load_quadit_config() -> Result<String, std::io::Error> {
         FileManager::readfile(FileManager::resolve_quadit_config_location())
     }
 
     /// converts the quadlet file name to a service name with some additional checks.
+    #[instrument(level = "trace")]
     pub fn filename_to_unit_name(target_path: &str) -> Result<String, String> {
         let mut path = PathBuf::from(&target_path);
         if !SUPPORTED_FILES.contains(
@@ -125,6 +132,7 @@ impl FileManager {
     /// # Arguments
     /// `job_path` - The path to the job - Usually `jobs/xxxxxxxx-xxxx-4xxx-Nxxx-xxxxxxxxxxxx`.
     /// `target_path` - The path of the file in the git repo  
+    #[instrument(level = "trace")]
     pub fn container_file_deployed(job_path: &str, target_path: &str) -> bool {
         let mut definition_path = PathBuf::new();
         definition_path.push(job_path);
@@ -141,6 +149,7 @@ impl FileManager {
     }
 
     /// Collects a directory contents as a vector of strings
+    #[instrument(level = "trace")]
     pub fn get_files_in_directory(path: &str) -> Result<Vec<String>, anyhow::Error> {
         // Get a list of all entries in the folder
         let entries = fs::read_dir(path)?;
@@ -164,6 +173,7 @@ impl FileManager {
     /// # Arguments
     /// `file_name1` - The first file to compare.
     /// `file_name2` - The second file to compare.    
+    #[instrument(level = "trace")]
     pub fn are_identical(file_name1: String, file_name2: String) -> bool {
         if let Result::Ok(file1) = File::open(file_name1) {
             let mut reader1 = BufReader::new(file1);
@@ -194,6 +204,7 @@ impl FileManager {
     /// # Arguments
     /// `job_path` - The location that the repo has been copied to
     /// `target_path` - The location of the .container file in the repo
+    #[instrument(level = "trace")]
     pub fn deploy_container_file(job_path: &str, target_path: &str) -> Result<String, String> {
         let path = Path::new(target_path);
 
@@ -280,7 +291,7 @@ mod tests {
 
     #[test]
     fn test_deploy_container_file() {
-        let jobdir = "test_deploy_container_file_job";
+        let jobdir = "/tmp/test_deploy_container_file_job";
         let target_path = "test.container";
         fs::create_dir(jobdir).unwrap();
 

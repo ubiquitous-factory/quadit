@@ -3,7 +3,6 @@
 //     sync::{Mutex, OnceLock},
 // };
 
-use log::{error, info, warn};
 use std::{
     collections::HashMap,
     fmt,
@@ -11,7 +10,7 @@ use std::{
     path::PathBuf,
     sync::{Mutex, OnceLock},
 };
-use tracing::instrument;
+use tracing::{error, info, instrument, warn};
 
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
@@ -41,7 +40,7 @@ impl GitManager {
     /// # Arguments
     ///
     /// * `target_configs` - A vector of `ConfigGit` objects
-    #[instrument]
+    #[instrument(level = "trace")]
     pub async fn from_target_configs(
         target_configs: Vec<ConfigGit>,
     ) -> Result<GitManager, JobSchedulerError> {
@@ -61,7 +60,7 @@ impl GitManager {
     /// A shared object between the git configurations and the jobs.
     /// Used for accessing data across async calls.
     /// Beware three arrow dragons!!
-    #[instrument]
+    #[instrument(level = "trace")]
     fn config_git_list() -> &'static Mutex<HashMap<uuid::Uuid, ConfigGit>> {
         static HASHMAP: OnceLock<Mutex<HashMap<uuid::Uuid, ConfigGit>>> = OnceLock::new();
         let hm: HashMap<uuid::Uuid, ConfigGit> = HashMap::new();
@@ -72,14 +71,14 @@ impl GitManager {
     /// # Arguments
     ///
     /// * `conf` - A`ConfigGit` object
-    #[instrument]
+    #[instrument(level = "trace")]
     pub async fn add_config(&mut self, conf: ConfigGit) -> Result<uuid::Uuid, JobSchedulerError> {
         self.scheduler
             .add(GitManager::create_job(conf).await?)
             .await
     }
 
-    #[instrument]
+    #[instrument(level = "trace")]
     pub async fn create_job(conf: ConfigGit) -> Result<Job, JobSchedulerError> {
         let sched = conf.schedule.clone();
         Job::new_async(sched.as_str(), move |uuid, mut l| {
@@ -219,7 +218,7 @@ impl GitManager {
     /// Processes the repo based on the target path supplied.
     /// If it's a directory it iterates through the top level of the directory
     /// Multi level structures should be implemented as different targets in the `config.yaml`
-    #[instrument]
+    #[instrument(level = "trace")]
     fn process_repo(job_path: &str, target_path: &str, uuid: uuid::Uuid) -> bool {
         let mut mdpath = PathBuf::new();
         mdpath.push(job_path);
@@ -230,7 +229,7 @@ impl GitManager {
         let md = match metadata(mdpath) {
             Ok(m) => m,
             Err(e) => {
-                error!("{}: Error getting metadata{}", uuid, e);
+                error!("{}: Error getting metadata {} {:?}", uuid, e, foldermdpath);
                 return false;
             }
         };
@@ -276,7 +275,7 @@ impl GitManager {
                     for file_name in file_names {
                         let file_path =
                             format!("{}/{}", foldermdpath.as_path().display(), file_name);
-                        GitManager::process_repo(job_path, &file_path, uuid);
+                        GitManager::process_repo("", &file_path, uuid);
                     }
                 }
                 Err(e) => error!("{}: Error: {}", uuid, e),
@@ -285,7 +284,7 @@ impl GitManager {
         true
     }
     /// Starts the `GitManager scheduler`
-    #[instrument]
+    #[instrument(level = "trace")]
     pub async fn start(&self) -> Result<(), JobSchedulerError> {
         info!("Starting schedule for all git configs");
         self.scheduler.start().await
