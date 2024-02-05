@@ -61,7 +61,7 @@ None of these environment variables should need tweaking but the options are doc
 |XDG_RUNTIME_DIR|`/run/user/%U`|Used by systemd to find a user-specific directory in which it can store small temporary files|
 |HOME|%u|Set by systemd parameter the home directory|
 |PODMAN_SYSTEMD_UNIT|%n|Set by systemd - the name of the unit|
-|LOG_LEVEL|info| Can be `error`, `warn`, `info`, `debug`, `trace`|
+|LOG_LEVEL|`info`| Can be `error`, `warn`, `info`, `debug`, `trace`|
 
 ## Supported Versions
 
