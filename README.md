@@ -94,28 +94,3 @@ conditions.
 If you want to contribute to `quadit`, please read our [CONTRIBUTING notes].
 
 [CONTRIBUTING notes]: CONTRIBUTING.md
-
-
-<style>
-    .redcircle {
-     width: 10px; 
-            height: 10px; 
-            background-color: red; 
-            border-radius: 50%; 
-            margin: auto;
-            } 
-    .greencircle {
-width: 10px; 
-            height: 10px; 
-            background-color: green; 
-            border-radius: 50%; 
-            margin: auto;
-    } 
-    .yellowcircle {
-width: 10px; 
-            height: 10px; 
-            background-color: yellow; 
-            border-radius: 50%; 
-            margin: auto;
-    } 
-    </style>
