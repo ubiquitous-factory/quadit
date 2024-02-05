@@ -44,6 +44,6 @@ cli = []
 
 [dev-dependencies]
 claims = "0.7.1"
-time = "0.3.32"
+time = "0.3.34"
 timer = "0.2.0"
 tokio-test = "*"
