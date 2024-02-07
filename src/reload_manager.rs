@@ -1,5 +1,5 @@
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 use crate::{config_reload::ConfigReload, file_manager::FileManager};
 
