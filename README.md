@@ -55,13 +55,15 @@ None of these environment variables should need tweaking but the options are doc
 
 |Name|Default|Description|
 |---|---|---|
+|BOOT_URL|<Empty>|Bootstrap the service from remote `config.yaml` hosted at a url. Overrides the local `config.yaml`| 
 |PODMAN_UNIT_PATH|`$HOME/.config/containers/systemd`|The location where the container files should be written on the host machine|
-|JOB_PATH|<Empty>|Left empty for testing but set to `/tmp` in the `quadit.container`|
+|JOB_PATH|<Empty>|Left empty for testing but set to `/tmp` in the `quadit.container` file|
 |JOB_FOLDER|`jobs`|The name of the folder to save jobs.|
 |XDG_RUNTIME_DIR|`/run/user/%U`|Used by systemd to find a user-specific directory in which it can store small temporary files|
-|HOME|%u|Set by systemd parameter the home directory|
+|HOME|%u|Set by systemd parameter `%u` but can be overridden in the `quadit.container` file|
 |PODMAN_SYSTEMD_UNIT|%n|Set by systemd - the name of the unit|
 |LOG_LEVEL|`info`| Can be `error`, `warn`, `info`, `debug`, `trace`|
+|SYSTEMCTL_PATH|`/usr/bin/systemctl`|Path to the `systemctl` binary|
 
 ## Supported Versions
 

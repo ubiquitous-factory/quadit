@@ -209,7 +209,7 @@ impl GitManager {
 
                         info!("{}: Next git run {:?}", uuid, ts);
                     }
-                    _ => warn!("Could not get next tick for job"),
+                    _ => error!("Could not get next tick for job"),
                 }
             })
         })
@@ -288,6 +288,26 @@ impl GitManager {
     pub async fn start(&self) -> Result<(), JobSchedulerError> {
         info!("Starting schedule for all git configs");
         self.scheduler.start().await
+    }
+
+    pub async fn stop(&mut self) -> Result<(), JobSchedulerError> {
+        let hm;
+        {
+            let internal_hm = match GitManager::config_git_list().lock() {
+                Ok(g) => g,
+                Err(e) => {
+                    error!("Failed to lock: {}", e);
+                    std::process::exit(1);
+                }
+            };
+            hm = internal_hm.clone();
+        }
+        for key in hm.keys() {
+            self.scheduler.remove(key).await?;
+        }
+
+        self.scheduler.shutdown().await?;
+        Ok(())
     }
 }
 

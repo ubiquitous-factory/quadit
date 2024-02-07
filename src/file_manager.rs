@@ -1,12 +1,13 @@
 use std::{
     env::var,
     fs::{self, File},
-    io::{BufReader, Read},
+    io::{self, BufReader, Read},
     path::{Path, PathBuf},
     sync::OnceLock,
 };
 
 use tracing::{error, info, instrument};
+use url::Url;
 
 const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "kube"];
 /// Manages all the file system interactions
@@ -21,6 +22,55 @@ impl FileManager {
         })
     }
 
+    pub fn boot_url() -> &'static str {
+        static BOOT_URL: OnceLock<String> = OnceLock::new();
+        BOOT_URL.get_or_init(|| var("BOOT_URL").unwrap_or("".to_string()))
+    }
+
+    /// Bootstraps the reload manager from a URL.
+    /// # Arguments
+    ///
+    /// * `url` - The location of the configuration
+    #[instrument(level = "trace")]
+    pub async fn from_url(url: &str) -> Result<bool, anyhow::Error> {
+        // write the file to tmp.
+        Url::parse(url)?;
+        let resp = reqwest::get(url).await?;
+        let body = resp.text().await?;
+        fs::create_dir_all("/tmp/quadit")?;
+        let tmp_loc = "/tmp/quadit/config.yaml.new";
+        let mut out = File::create(tmp_loc)?;
+        io::copy(&mut body.as_bytes(), &mut out)?;
+
+        let conf_location = FileManager::resolve_quadit_config_location();
+        let unm_conf_location = conf_location.clone();
+        // check to see if the files are the same
+        // if they are do nothing
+        if !FileManager::are_identical(tmp_loc, &conf_location) {
+            // check if there is already a file in .quadit
+            // if there is then rename it bak
+            if FileManager::file_exists(&conf_location) {
+                // move file to back
+                let bak_name = format!("{}{}", conf_location, ".bak");
+                fs::rename(conf_location, bak_name)?;
+            }
+            // copy the file from tmp to .quadit
+            // the folder might not have been created yet so lets to that
+            let quadit_home = FileManager::quadit_home();
+            fs::create_dir_all(quadit_home)?;
+            fs::rename(tmp_loc, unm_conf_location)?;
+            return Ok(true);
+        }
+
+        // let reload_manager = ReloadManager::new().await?;
+
+        Ok(false)
+    }
+
+    #[instrument(level = "trace")]
+    pub fn file_exists(path: &str) -> bool {
+        Path::new(path).exists()
+    }
     /// gets the name of the job folder
     #[instrument(level = "trace")]
     pub fn job_folder() -> &'static str {
@@ -143,8 +193,14 @@ impl FileManager {
         config_path.push(path.file_name().unwrap_or_default());
 
         FileManager::are_identical(
-            config_path.display().to_string(),
-            definition_path.display().to_string(),
+            config_path
+                .as_os_str()
+                .to_str()
+                .unwrap_or("config_path_unknown"),
+            definition_path
+                .as_os_str()
+                .to_str()
+                .unwrap_or("definition_path_unknown"),
         )
     }
 
@@ -174,7 +230,7 @@ impl FileManager {
     /// `file_name1` - The first file to compare.
     /// `file_name2` - The second file to compare.    
     #[instrument(level = "trace")]
-    pub fn are_identical(file_name1: String, file_name2: String) -> bool {
+    pub fn are_identical(file_name1: &str, file_name2: &str) -> bool {
         if let Result::Ok(file1) = File::open(file_name1) {
             let mut reader1 = BufReader::new(file1);
             if let Result::Ok(file2) = File::open(file_name2) {
@@ -276,15 +332,15 @@ mod tests {
 
     #[test]
     fn test_are_identical() {
-        let file_name1 = String::from("Cargo.toml");
-        let file_name2 = String::from("Cargo.toml");
+        let file_name1 = "Cargo.toml";
+        let file_name2 = "Cargo.toml";
 
         assert!(FileManager::are_identical(file_name1, file_name2));
     }
     #[test]
     fn test_are_not_identical() {
-        let file_name1 = String::from("README.md");
-        let file_name2 = String::from("Cargo.toml");
+        let file_name1 = "README.md";
+        let file_name2 = "Cargo.toml";
 
         assert!(!FileManager::are_identical(file_name1, file_name2));
     }

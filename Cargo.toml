@@ -29,6 +29,8 @@ tracing-subscriber = { version = "0.3.18", features = [
     "registry",
     "env-filter",
 ] }
+url = "2.5.0"
+reqwest = "0.11.24"
 
 
 [[bin]]

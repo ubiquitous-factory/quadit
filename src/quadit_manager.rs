@@ -50,10 +50,19 @@ impl QuaditManager {
 
     /// Starts the scheduler services
     #[instrument]
-    pub async fn start(self) -> Result<(), anyhow::Error> {
+    pub async fn start(&self) -> Result<(), anyhow::Error> {
         self.git_manager.start().await?;
         if self.reload_manager.is_some() {
             self.reload_manager.as_ref().unwrap().start().await?;
+        }
+        Ok(())
+    }
+
+    /// Stops the scheduler services
+    pub async fn stop(&mut self) -> Result<(), anyhow::Error> {
+        self.git_manager.stop().await?;
+        if self.reload_manager.is_some() {
+            self.reload_manager.as_mut().unwrap().stop().await?;
         }
         Ok(())
     }

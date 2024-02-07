@@ -1,4 +1,5 @@
 use anyhow::Error;
+
 use std::fs;
 use std::process::{Child, ExitStatus};
 use std::time::Duration;
@@ -11,9 +12,25 @@ const USER: bool = true;
 pub struct ServiceManager {}
 
 impl ServiceManager {
-    /// Creates an instance of the QuaditManager and startes it.
+    /// Creates an instance of the QuaditManager and starts it.
     #[instrument]
     pub async fn run() -> Result<(), Error> {
+        if FileManager::boot_url().is_empty() {
+            FileManager::from_url(FileManager::boot_url()).await?;
+        }
+        let serviceconf = FileManager::load_quadit_config()?;
+        let quadit = QuaditManager::from_yaml(serviceconf).await?;
+        quadit.start().await?;
+        loop {
+            std::thread::sleep(Duration::from_millis(100));
+        }
+    }
+
+    #[instrument]
+    pub async fn reload() -> Result<(), Error> {
+        if FileManager::boot_url().is_empty() {
+            FileManager::from_url(FileManager::boot_url()).await?;
+        }
         let serviceconf = FileManager::load_quadit_config()?;
         let quadit = QuaditManager::from_yaml(serviceconf).await?;
         quadit.start().await?;
