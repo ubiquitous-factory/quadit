@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
 }
 
 async fn svc() -> Result<(), anyhow::Error> {
-    if !env::args().collect::<Vec<_>>().len() == 1 {
+    if !env::args().collect::<Vec<_>>().len() > 1 {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
         println!("quadit Server Edition v{}", VERSION);
         println!("This process accepts no arguments.");

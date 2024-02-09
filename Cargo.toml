@@ -1,6 +1,6 @@
 [package]
 name = "quadit"
-version = "0.1.3"
+version = "0.1.4"
 description = "A gitops tool to deploy systemd managed containers on linux using quadlets"
 authors = ["Anton Whalley <antonwhalley@yahoo.com>"]
 license = "MIT OR Apache-2.0"
