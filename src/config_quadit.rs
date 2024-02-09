@@ -4,7 +4,7 @@ use crate::config_commands::ConfigCommands;
 use crate::config_git::ConfigGit;
 use crate::config_reload::ConfigReload;
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigQuadit {
     pub target_configs: Vec<ConfigGit>,
@@ -27,7 +27,7 @@ mod tests {
         let test_yaml = r#"
 configReload:
   configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
-  schedule: "*/2 * * * *"
+  interval: 1000
 targetConfigs:
 - url: "https://github.com/ubiquitous-factory/quadit"
   targetPath: "samples/sleep.container"
@@ -46,7 +46,7 @@ targetConfigs:
         let test_yaml = r#"
     configReload:
       configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
-      schedule: "*/2 * * * *"
+      interval: 1000
     configCommands:
       name: sleep
       action: stop

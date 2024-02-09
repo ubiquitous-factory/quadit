@@ -195,14 +195,14 @@ impl GitManager {
                             uuid,
                         ) {
                             info!(
-                                "{}: Completed deployment of {} to {}",
+                                "{}: Completed processing of {} for {}",
                                 uuid,
                                 &internal_gc.target_path,
                                 tpath.to_str().unwrap_or_default()
                             );
                         } else {
                             error!(
-                                "{}: Failed deployment of {}",
+                                "{}: Failed processing of {}",
                                 uuid, &internal_gc.target_path
                             );
                         }
@@ -233,7 +233,12 @@ impl GitManager {
                 return false;
             }
         };
-
+        info!(
+            "{}: Processing target: {} is file: {}",
+            uuid,
+            foldermdpath.display(),
+            md.is_file()
+        );
         if md.is_file() && !FileManager::container_file_deployed(job_path, target_path) {
             // Iteratively loop through the job directory and only deploy the files that are different.
             match FileManager::deploy_container_file(job_path, target_path) {
@@ -304,6 +309,14 @@ impl GitManager {
         }
         for key in hm.keys() {
             self.scheduler.remove(key).await?;
+            let mut internal_hm = match GitManager::config_git_list().lock() {
+                Ok(g) => g,
+                Err(e) => {
+                    error!("Failed to lock: {}", e);
+                    std::process::exit(1);
+                }
+            };
+            internal_hm.remove(key);
         }
 
         self.scheduler.shutdown().await?;

@@ -6,7 +6,7 @@ use std::{
     sync::OnceLock,
 };
 
-use tracing::{error, info, instrument};
+use tracing::{debug, error, info, instrument};
 use url::Url;
 
 const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "kube"];
@@ -14,7 +14,6 @@ const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "ku
 pub struct FileManager {}
 
 impl FileManager {
-    #[cfg(feature = "cli")]
     fn podman_unit_path() -> &'static str {
         static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
         PODMAN_UNIT_PATH.get_or_init(|| {
@@ -49,6 +48,7 @@ impl FileManager {
         if !FileManager::are_identical(tmp_loc, &conf_location) {
             // check if there is already a file in .quadit
             // if there is then rename it bak
+            info!("config files are different creating a backup");
             if FileManager::file_exists(&conf_location) {
                 // move file to back
                 let bak_name = format!("{}{}", conf_location, ".bak");
@@ -58,7 +58,9 @@ impl FileManager {
             // the folder might not have been created yet so lets to that
             let quadit_home = FileManager::quadit_home();
             fs::create_dir_all(quadit_home)?;
-            fs::rename(tmp_loc, unm_conf_location)?;
+            info!("Moving new config {} to {}", tmp_loc, unm_conf_location);
+            fs::copy(tmp_loc, unm_conf_location)?;
+            info!("Moved new config");
             return Ok(true);
         }
 
@@ -76,6 +78,12 @@ impl FileManager {
     pub fn job_folder() -> &'static str {
         static JOB_FOLDER: OnceLock<String> = OnceLock::new();
         JOB_FOLDER.get_or_init(|| var("JOB_FOLDER").unwrap_or("jobs".to_string()))
+    }
+
+    #[instrument(level = "trace")]
+    pub fn is_local() -> &'static str {
+        static LOCAL: OnceLock<String> = OnceLock::new();
+        LOCAL.get_or_init(|| var("LOCAL").unwrap_or("no".to_string()))
     }
 
     /// Gets the root to the root of the job path folder.
@@ -112,38 +120,37 @@ impl FileManager {
     }
 
     /// Gets the home location of the user currently running quadit
-    #[cfg(feature = "cli")]
     pub fn quadit_home() -> String {
-        let mut dir = match dirs::home_dir() {
-            Some(s) => s,
-            None => match std::env::current_dir() {
-                Ok(s) => s,
-                Err(e) => {
-                    error!(
-                        "couldn't find home or current directory \n {} \n going to try `./` ",
-                        e
-                    );
-                    PathBuf::from("./")
-                }
-            },
-        };
-        dir.push(".quadit");
-        // dir.push("config.yaml");
-        if !dir.exists() {
-            error!(
-                "The file `{}` does not exist. See samples folder",
-                dir.to_string_lossy()
-            );
-            std::process::exit(1);
-        };
-        // TODO: OS specific but that's OK for linux
-        dir.as_path().display().to_string()
+        if FileManager::is_local() == "yes" {
+            let mut dir = match dirs::home_dir() {
+                Some(s) => s,
+                None => match std::env::current_dir() {
+                    Ok(s) => s,
+                    Err(e) => {
+                        error!(
+                            "couldn't find home or current directory \n {} \n going to try `./` ",
+                            e
+                        );
+                        PathBuf::from("./")
+                    }
+                },
+            };
+            dir.push(".quadit");
+            // dir.push("config.yaml");
+            if !dir.exists() {
+                error!(
+                    "The file `{}` does not exist. See samples folder",
+                    dir.to_string_lossy()
+                );
+                std::process::exit(1);
+            };
+            // TODO: OS specific but that's OK for linux
+            dir.as_path().display().to_string()
+        } else {
+            "/opt/config".to_string()
+        }
     }
 
-    #[cfg(not(feature = "default"))]
-    pub fn quadit_home() -> String {
-        "/opt/config".to_string()
-    }
     /// Loads the quadit config based on the resolved location.
     #[instrument(level = "trace")]
     pub fn load_quadit_config() -> Result<String, std::io::Error> {
@@ -190,8 +197,14 @@ impl FileManager {
 
         let path = Path::new(target_path);
         let mut config_path = FileManager::get_container_path();
+
         config_path.push(path.file_name().unwrap_or_default());
 
+        debug!(
+            "{} comparing {}",
+            config_path.display(),
+            definition_path.display()
+        );
         FileManager::are_identical(
             config_path
                 .as_os_str()
@@ -303,21 +316,19 @@ impl FileManager {
         Ok(cpath.as_path().display().to_string())
     }
 
-    #[cfg(feature = "cli")]
     fn get_container_path() -> PathBuf {
-        let mut config_path = match dirs::home_dir() {
-            Some(p) => p,
-            None => PathBuf::new(),
-        };
-        config_path.push(FileManager::podman_unit_path());
-        config_path
-    }
-
-    #[cfg(not(feature = "cli"))]
-    fn get_container_path() -> PathBuf {
-        let mut config_path = PathBuf::new();
-        config_path.push("/opt/containers");
-        config_path
+        if FileManager::is_local() == "yes" {
+            let mut config_path = match dirs::home_dir() {
+                Some(p) => p,
+                None => PathBuf::new(),
+            };
+            config_path.push(FileManager::podman_unit_path());
+            config_path
+        } else {
+            let mut config_path = PathBuf::new();
+            config_path.push("/opt/containers");
+            config_path
+        }
     }
 }
 

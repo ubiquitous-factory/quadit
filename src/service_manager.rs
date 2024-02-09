@@ -1,28 +1,76 @@
 use anyhow::Error;
 
-use std::fs;
 use std::process::{Child, ExitStatus};
 use std::time::Duration;
+use std::{fmt, fs};
 use tracing::instrument;
 
-use crate::{file_manager::FileManager, quadit_manager::QuaditManager};
+use crate::config_commands::ConfigCommands;
+use crate::config_git::ConfigGit;
+use crate::config_quadit::ConfigQuadit;
+use crate::config_reload::ConfigReload;
+use crate::file_manager::FileManager;
+use crate::git_manager::GitManager;
 
 const SYSTEMCTL_PATH: &str = "/usr/bin/systemctl";
 const USER: bool = true;
-pub struct ServiceManager {}
+pub struct ServiceManager {
+    pub git_manager: GitManager,
+    pub target_configs: Vec<ConfigGit>,
+    pub config_reload: Option<ConfigReload>,
+    pub systemd_commands: Option<Vec<ConfigCommands>>,
+}
+
+impl fmt::Debug for ServiceManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Service Manager")
+    }
+}
 
 impl ServiceManager {
-    /// Creates an instance of the QuaditManager and starts it.
+    /// Returns an configured quadit manager.
+    /// # Arguments
+    ///
+    /// * `conf` - A String slice that contains the complete `config.yaml`
     #[instrument]
-    pub async fn run() -> Result<(), Error> {
-        if FileManager::boot_url().is_empty() {
+    pub async fn configured() -> Result<ServiceManager, anyhow::Error> {
+        if !FileManager::boot_url().is_empty() {
             FileManager::from_url(FileManager::boot_url()).await?;
         }
-        let serviceconf = FileManager::load_quadit_config()?;
-        let quadit = QuaditManager::from_yaml(serviceconf).await?;
-        quadit.start().await?;
+        let conf = FileManager::load_quadit_config()?;
+        let quad = ConfigQuadit::from_yaml(conf)?;
+        let tconfigs = quad.target_configs.clone();
+        Ok(ServiceManager {
+            git_manager: GitManager::from_target_configs(quad.target_configs).await?,
+            target_configs: tconfigs,
+            config_reload: quad.config_reload,
+            systemd_commands: quad.systemd_commands,
+        })
+    }
+    /// Creates an instance of the QuaditManager and starts it.
+    #[instrument]
+    pub async fn run(&mut self) -> Result<(), Error> {
+        self.git_manager.start().await?;
+
         loop {
-            std::thread::sleep(Duration::from_millis(100));
+            let mut sleep: u64 = 100;
+            if self.config_reload.is_some() {
+                sleep = self.config_reload.as_ref().unwrap().interval;
+            }
+            std::thread::sleep(Duration::from_millis(sleep));
+
+            if self.config_reload.is_some() {
+                let changed = FileManager::from_url(
+                    self.config_reload.as_ref().unwrap().config_u_r_l.as_str(),
+                )
+                .await?;
+                if changed {
+                    self.git_manager.stop().await?;
+                    let configs = self.target_configs.clone();
+                    self.git_manager = GitManager::from_target_configs(configs).await?;
+                    self.git_manager.start().await?;
+                }
+            }
         }
     }
 
@@ -31,9 +79,9 @@ impl ServiceManager {
         if FileManager::boot_url().is_empty() {
             FileManager::from_url(FileManager::boot_url()).await?;
         }
-        let serviceconf = FileManager::load_quadit_config()?;
-        let quadit = QuaditManager::from_yaml(serviceconf).await?;
-        quadit.start().await?;
+        // let serviceconf = FileManager::load_quadit_config()?;
+        // let quadit = QuaditManager::from_yaml(serviceconf).await?;
+        // quadit.start().await?;
         loop {
             std::thread::sleep(Duration::from_millis(100));
         }

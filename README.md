@@ -56,6 +56,7 @@ None of these environment variables should need tweaking but the options are doc
 |Name|Default|Description|
 |---|---|---|
 |BOOT_URL|<Empty>|Bootstrap the service from remote `config.yaml` hosted at a url. Overrides the local `config.yaml`| 
+|LOCAL|'no'|If set to a 'yes' then the exe will assume it's not in a container and run with the local users configuration from $HOME and not use `/opt` locations| 
 |PODMAN_UNIT_PATH|`$HOME/.config/containers/systemd`|The location where the container files should be written on the host machine|
 |JOB_PATH|<Empty>|Left empty for testing but set to `/tmp` in the `quadit.container` file|
 |JOB_FOLDER|`jobs`|The name of the folder to save jobs.|

@@ -10,11 +10,6 @@ include = ["src/**/*", "LICENSE-*", "*.md"]
 
 [dependencies]
 anyhow = "1.0.79"
-clap = { version = "4.4.18", features = [
-    "derive",
-    "std",
-    "help",
-], default-features = false }
 quaditsync = "1.0.1"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_yaml = "0.9.31"
@@ -22,7 +17,6 @@ tokio-cron-scheduler = "0.10.0"
 uuid = "1.7.0"
 tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
 dotenvy = "0.15.7"
-dirs = "5.0.1"
 chrono = "0.4.33"
 tracing = { version = "0.1.40", features = ["log"] }
 tracing-subscriber = { version = "0.3.18", features = [
@@ -31,6 +25,7 @@ tracing-subscriber = { version = "0.3.18", features = [
 ] }
 url = "2.5.0"
 reqwest = "0.11.24"
+dirs = "5.0.1"
 
 
 [[bin]]
@@ -39,10 +34,6 @@ name = "quadit"
 
 [profile.release]
 lto = true
-
-[features]
-default = ["cli"]
-cli = []
 
 [dev-dependencies]
 claims = "0.7.1"
