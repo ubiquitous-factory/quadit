@@ -1,6 +1,6 @@
 configReload:
   configURL: https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/samples/config.yaml
-  schedule: 10000
+  interval: 10000
 targetConfigs:
 - url: https://github.com/ubiquitous-factory/quadit
   targetPath: "samples/helloworld"
