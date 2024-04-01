@@ -15,7 +15,7 @@ serde = { version = "1.0.196", features = ["derive"] }
 serde_yaml = "0.9.31"
 tokio-cron-scheduler = "0.10.0"
 uuid = "1.7.0"
-tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread"] }
 dotenvy = "0.15.7"
 chrono = "0.4.34"
 tracing = { version = "0.1.40", features = ["log"] }
