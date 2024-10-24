@@ -1,22 +1,16 @@
-FROM registry.access.redhat.com/ubi8/ubi as rhel8builder
+FROM cgr.dev/chainguard/rust:latest-dev AS build
 
-RUN yum install -y gcc openssl-devel && \
-    rm -rf /var/cache/dnf && \
-    curl https://sh.rustup.rs -sSf | sh -s -- -y
+USER root
+RUN apk update && apk add openssl-dev
 
-COPY . /app-build
+WORKDIR /app
 
-WORKDIR "/app-build"
-
-ENV PATH=/root/.cargo/bin:${PATH}
-
+COPY ./src ./src
+COPY Cargo.toml  ./
 RUN cargo build --release
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal
-
-RUN  microdnf update && microdnf install -y procps-ng
-
-WORKDIR "/app"
-COPY --from=rhel8builder /app-build/target/release/quadit ./
-
-CMD [ "./quadit" ]
+FROM cgr.dev/chainguard/glibc-dynamic
+COPY --from=build /usr/lib/libssl.so.3 /usr/lib/libssl.so.3
+COPY --from=build /usr/lib/libcrypto.so.3 /usr/lib/libcrypto.so.3 
+COPY --from=build --chown=nonroot:nonroot /app/target/release/quadit /usr/local/bin/quadit
+CMD [ "/usr/local/bin/quadit" ]

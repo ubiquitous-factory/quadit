@@ -45,8 +45,8 @@ Please evaluate the following matrix to understand which one would better suit y
 From the edge device running a systemd based distro with the latest podman the following commands:
 ```
 mkdir ~/.quadit
-curl -o ~/.quadit https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/samples/config.yaml
-curl -o ~/.config/containers/systemd https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/deploy/quadit.container
+curl -o ~/.quadit/config.yaml https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/samples/config.yaml
+curl -o ~/.config/containers/systemd/quadit.container https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/deploy/quadit.container
 loginctl enable-linger $USER
 ```
 
