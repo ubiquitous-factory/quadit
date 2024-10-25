@@ -1,6 +1,6 @@
-FROM registry.access.redhat.com/ubi9/ubi as rhel9builder
+FROM docker.io/fedora@sha256:d0207dbb078ee261852590b9a8f1ab1f8320547be79a2f39af9f3d23db33735e as build
 
-RUN yum install -y gcc openssl-devel && \
+RUN dnf install -y gcc openssl-devel && \
     rm -rf /var/cache/dnf && \
     curl https://sh.rustup.rs -sSf | sh -s -- -y
 
@@ -12,9 +12,9 @@ ENV PATH=/root/.cargo/bin:${PATH}
 
 RUN cargo build --release
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal
+FROM docker.io/fedora@sha256:d0207dbb078ee261852590b9a8f1ab1f8320547be79a2f39af9f3d23db33735e
 
-RUN  microdnf update && microdnf install -y procps-ng
+RUN  dnf install -y gcc openssl-devel
 
 WORKDIR "/app"
 COPY --from=rhel9builder /app-build/target/release/quadit ./

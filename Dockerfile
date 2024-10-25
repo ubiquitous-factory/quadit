@@ -1,16 +1,22 @@
-FROM cgr.dev/chainguard/rust:latest-dev AS build
+FROM docker.io/fedora@sha256:d0207dbb078ee261852590b9a8f1ab1f8320547be79a2f39af9f3d23db33735e as build
 
-USER root
-RUN apk update && apk add openssl-dev
+RUN dnf install -y gcc openssl-devel && \
+    rm -rf /var/cache/dnf && \
+    curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-WORKDIR /app
+WORKDIR "/app-build"
+
+ENV PATH=/root/.cargo/bin:${PATH}
 
 COPY ./src ./src
 COPY Cargo.toml  ./
 RUN cargo build --release
 
-FROM cgr.dev/chainguard/glibc-dynamic
-COPY --from=build /usr/lib/libssl.so.3 /usr/lib/libssl.so.3
-COPY --from=build /usr/lib/libcrypto.so.3 /usr/lib/libcrypto.so.3 
-COPY --from=build --chown=nonroot:nonroot /app/target/release/quadit /usr/local/bin/quadit
-CMD [ "/usr/local/bin/quadit" ]
+FROM docker.io/fedora@sha256:d0207dbb078ee261852590b9a8f1ab1f8320547be79a2f39af9f3d23db33735e
+
+RUN  dnf install -y openssl-devel
+
+WORKDIR "/app"
+COPY --from=build /app-build/target/release/quadit ./
+
+CMD [ "./quadit" ]

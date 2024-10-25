@@ -44,10 +44,14 @@ Please evaluate the following matrix to understand which one would better suit y
 
 From the edge device running a systemd based distro with the latest podman the following commands:
 ```
+sudo setsebool -P container_manage_cgroup true
 mkdir ~/.quadit
 curl -o ~/.quadit/config.yaml https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/samples/config.yaml
+mkdir -p ~/.config/containers/systemd
 curl -o ~/.config/containers/systemd/quadit.container https://raw.githubusercontent.com/ubiquitous-factory/quadit/main/deploy/quadit.container
 loginctl enable-linger $USER
+systemctl --user daemon-reload
+systemctl --user start quadit
 ```
 
 ### environment variables
