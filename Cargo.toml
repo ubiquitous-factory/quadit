@@ -14,7 +14,7 @@ quaditsync = "1.0.1"
 serde = { version = "1.0.213", features = ["derive"] }
 serde_yaml = "0.9.34"
 tokio-cron-scheduler = "0.13.0"
-uuid = "1.8.0"
+uuid = "1.11.0"
 tokio = { version = "1.41.0", features = ["macros", "rt-multi-thread"] }
 dotenvy = "0.15.7"
 chrono = "0.4.38"
