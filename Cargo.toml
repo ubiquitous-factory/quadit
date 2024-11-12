@@ -23,7 +23,7 @@ tracing-subscriber = { version = "0.3.18", features = [
     "registry",
     "env-filter",
 ] }
-url = "2.5.2"
+url = "2.5.3"
 reqwest = "0.12.9"
 dirs = "5.0.1"
 
