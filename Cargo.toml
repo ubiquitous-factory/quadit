@@ -36,6 +36,6 @@ name = "quadit"
 lto = true
 
 [dev-dependencies]
-claims = "0.7.1"
+claims = "0.8.0"
 time = "0.3.36"
 timer = "0.2.0"
