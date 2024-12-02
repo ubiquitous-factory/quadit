@@ -15,8 +15,8 @@ use tracing::{error, info, instrument, warn};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::{config_git::ConfigGit, file_manager::FileManager, service_manager::ServiceManager};
-/// Manages the check out and syncing of each `GitConfig` using async tasks.
 
+/// Manages the check out and syncing of each `GitConfig` using async tasks.
 pub struct GitManager {
     /// The scheduler responsible for executing a job per entry in `config.yaml`
     scheduler: JobScheduler,
