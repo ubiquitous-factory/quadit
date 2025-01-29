@@ -1,6 +1,6 @@
 [package]
 name = "quadit"
-version = "0.1.5"
+version = "0.1.6"
 description = "A gitops tool to deploy systemd managed containers on linux using quadlets"
 authors = ["Anton Whalley <antonwhalley@yahoo.com>"]
 license = "MIT OR Apache-2.0"
@@ -10,7 +10,7 @@ include = ["src/**/*", "LICENSE-*", "*.md"]
 
 [dependencies]
 anyhow = "1.0.93"
-quaditsync = "1.0.1"
+quaditsync = "1.0.2"
 serde = { version = "1.0.215", features = ["derive"] }
 serde_yaml = "0.9.34"
 tokio-cron-scheduler = "0.13.0"
