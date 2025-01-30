@@ -1,0 +1,80 @@
+name: Build and Push Containers From main
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths-ignore:
+      - "**.md"
+
+env:
+  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_TAGS: ${{ github.sha }}
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ github.repository_owner }}
+
+jobs:
+  doing-a-build:
+    uses: ubiquitous-factory/quadit/.github/workflows/build.yml@main
+    secrets: inherit
+  push-ghcr:
+    name: Build and push manifest
+    permissions: write-all
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [ amd64, arm64 ]
+
+    steps:
+      # Checkout push-to-registry action github repository
+      - name: Checkout Push to Registry action
+        uses: actions/checkout@v3
+      - id: tag
+        run: echo "TAG=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      - name: Install qemu dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+      - name: Determine Checkout Depth
+        uses: haya14busa/action-cond@v1
+        id: remotearch
+        with:
+          cond: ${{ matrix.arch == 'arm64' }}
+          if_true: 'aarch64'
+          if_false: 'x86_64'
+      - name: Build Image
+        id: build_image
+        uses: redhat-actions/buildah-build@v2.12
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.tag.outputs.TAG }}-linux-${{ matrix.arch }} ${{ github.sha }}
+          arch: ${{ matrix.arch }}
+          build-args: REMOTE_ARCH=${{ steps.remotearch.outputs.value }}
+          containerfiles: |
+            ./Containerfile
+      - name: Push To ghcr
+        uses: redhat-actions/push-to-registry@v2
+        id: push
+        with:
+          image: ${{ steps.build_image.outputs.image }}
+          tags: ${{ steps.tag.outputs.TAG }}-linux-${{ matrix.arch }} ${{ github.sha }}
+          registry: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker Login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+      - name: Build Manifest
+        id: manifests
+        continue-on-error: true
+        run: |
+          docker manifest create \
+            ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{env.IMAGE_NAME}}:${{ steps.tag.outputs.TAG }}  \
+            ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{env.IMAGE_NAME}}:${{ steps.tag.outputs.TAG }}-linux-amd64 \
+            ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{env.IMAGE_NAME}}:${{ steps.tag.outputs.TAG }}-linux-arm64
+      - run: docker manifest push ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{env.IMAGE_NAME}}:${{ steps.tag.outputs.TAG }}
+
