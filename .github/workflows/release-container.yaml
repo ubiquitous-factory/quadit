@@ -52,7 +52,7 @@ jobs:
           arch: ${{ matrix.arch }}
           build-args: REMOTE_ARCH=${{ steps.remotearch.outputs.value }}
           containerfiles: |
-            ./Containerfile
+            ./Dockerfile
       - name: Push To ghcr
         uses: redhat-actions/push-to-registry@v2
         id: push
