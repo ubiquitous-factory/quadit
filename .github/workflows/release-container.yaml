@@ -8,7 +8,7 @@ on:
       - "**.md"
 
 env:
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: quadit
   IMAGE_TAGS: ${{ github.sha }}
   IMAGE_REGISTRY: ghcr.io
   IMAGE_NAMESPACE: ${{ github.repository_owner }}
