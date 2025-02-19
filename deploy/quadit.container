@@ -7,7 +7,7 @@ Environment=PODMAN_SYSTEMD_UNIT=%n
 AutoUpdate=registry
 ContainerName=quadit
 Environment=XDG_RUNTIME_DIR=/run/user/%U HOME=%h
-Image=quay.io/mehal_tech/quadit:v0.1.5
+Image=ghcr.io/ubiquitous-factory/quadit:v0.1.6
 SecurityLabelDisable=true
 Volume=quadit-volume:/opt
 Volume=%h/.quadit:/opt/config
