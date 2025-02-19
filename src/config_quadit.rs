@@ -63,4 +63,34 @@ targetConfigs:
             "https://github.com/ubiquitous-factory/quadit".to_string()
         );
     }
+    #[test]
+    fn test_extended_quaditconfig_from_string() {
+        let test_yaml = r#"
+    clientConfig:
+      image: quay.io/fedora/fedora-bootc:41
+      canarySchedule:
+        - 25
+        - 50
+        - 75
+      interval: 1
+      retrycount: 0
+    configReload:
+      configURL: https://raw.githubusercontent.com/ubiquitous-factory/ai-remote-edge/main/deploy/config.yaml
+      interval: 1000
+    configCommands:
+      name: sleep
+      action: stop
+    targetConfigs:
+    - url: "https://github.com/ubiquitous-factory/quadit"
+      targetPath: "samples/sleep.container"
+      branch: "main"
+      schedule: "*/1 * * * *"
+    "#;
+        let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
+        println!("{:#?}", deser);
+        assert_eq!(
+            deser.target_configs[0].url,
+            "https://github.com/ubiquitous-factory/quadit".to_string()
+        );
+    }
 }
