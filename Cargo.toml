@@ -9,7 +9,7 @@ edition = "2021"
 include = ["src/**/*", "LICENSE-*", "*.md"]
 
 [dependencies]
-anyhow = "1.0.95"
+anyhow = "1.0.96"
 quaditsync = "1.0.2"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_yaml = "0.9.34"
