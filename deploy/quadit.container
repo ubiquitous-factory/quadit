@@ -7,7 +7,7 @@ Environment=PODMAN_SYSTEMD_UNIT=%n
 AutoUpdate=registry
 ContainerName=quadit
 Environment=XDG_RUNTIME_DIR=/run/user/%U HOME=%h
-Image=ghcr.io/ubiquitous-factory/quadit:v0.1.6
+Image=ghcr.io/ubiquitous-factory/quadit:main
 SecurityLabelDisable=true
 Volume=quadit-volume:/opt
 Volume=%h/.quadit:/opt/config
@@ -15,9 +15,9 @@ Volume=%h/.config/containers/systemd:/opt/containers
 Volume=/run/user/%U/podman/podman.sock:/run/podman/podman.sock
 # Need to validate if --cgroups no-conmon --cidfile "%t/%n.ctr-id" options are provided by Container
 PodmanArgs=--init-path /usr/sbin/init --pid host --privileged
-Mount=type=tmpfs,destination=/run/user/1000,rw=true
+Mount=type=tmpfs,destination=/run/user/%U,rw=true
 Mount=type=bind,source=/sys/fs/cgroup,destination=/sys/fs/cgroup,ro=true
-Mount=type=bind,source=/run/user/1000/systemd,destination=/run/user/1000/systemd,rw=true
+Mount=type=bind,source=/run/user/%U/systemd,destination=/run/user/%U/systemd,rw=true
 UserNS=keep-id
 Environment=JOB_PATH=/tmp
 [Service]
