@@ -37,5 +37,5 @@ lto = true
 
 [dev-dependencies]
 claims = "0.8.0"
-time = "0.3.37"
+time = "0.3.39"
 timer = "0.2.0"
