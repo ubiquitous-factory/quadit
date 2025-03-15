@@ -218,30 +218,34 @@ impl GitManager {
     /// Processes the repo based on the target path supplied.
     /// If it's a directory it iterates through the top level of the directory
     /// Multi level structures should be implemented as different targets in the `config.yaml`
+    /// # Arguments
+    /// `job_path` - The path to the job - Usually `jobs/xxxxxxxx-xxxx-4xxx-Nxxx-xxxxxxxxxxxx`.
+    /// `config_target_path` - The targetPath specified in the `config.yaml`
     #[instrument(level = "trace")]
-    fn process_repo(job_path: &str, target_path: &str, uuid: uuid::Uuid) -> bool {
-        let mut mdpath = PathBuf::new();
-        mdpath.push(job_path);
-        mdpath.push(target_path);
+    fn process_repo(job_path: &str, config_target_path: &str, uuid: uuid::Uuid) -> bool {
+        let mut full_job_path = PathBuf::new();
+        full_job_path.push(job_path);
+        full_job_path.push(config_target_path);
 
-        let foldermdpath = mdpath.clone();
-
-        let md = match metadata(mdpath) {
+        let md = match metadata(&full_job_path) {
             Ok(m) => m,
             Err(e) => {
-                error!("{}: Error getting metadata {} {:?}", uuid, e, foldermdpath);
+                error!(
+                    "{}: Error getting metadata {} {:?}",
+                    uuid, e, &full_job_path
+                );
                 return false;
             }
         };
         info!(
             "{}: Processing target: {} is file: {}",
             uuid,
-            foldermdpath.display(),
+            &full_job_path.display(),
             md.is_file()
         );
-        if md.is_file() && !FileManager::container_file_deployed(job_path, target_path) {
+        if md.is_file() && !FileManager::is_unit_file_deployed(job_path, config_target_path) {
             // Iteratively loop through the job directory and only deploy the files that are different.
-            match FileManager::deploy_container_file(job_path, target_path) {
+            match FileManager::deploy_unit_file(job_path, config_target_path) {
                 Ok(s) => info!("{}: Deployed to {}", uuid, s),
                 Err(e) => {
                     error!("{}: Error deploying container file: {}", uuid, e);
@@ -256,7 +260,7 @@ impl GitManager {
                     return false;
                 }
             };
-            let unit = match FileManager::filename_to_unit_name(target_path) {
+            let unit = match FileManager::filename_to_unit_name(config_target_path) {
                 Ok(s) => s,
                 Err(e) => {
                     error!("{}, Failed to get unit name: {}", uuid, e);
@@ -272,14 +276,14 @@ impl GitManager {
             info!(
                 "{}: Processing Directory {}",
                 uuid,
-                foldermdpath.as_path().display()
+                &full_job_path.as_path().display()
             );
 
-            match FileManager::get_files_in_directory(foldermdpath.to_str().unwrap_or_default()) {
+            match FileManager::get_files_in_directory(full_job_path.to_str().unwrap_or_default()) {
                 Ok(file_names) => {
                     for file_name in file_names {
                         let file_path =
-                            format!("{}/{}", foldermdpath.as_path().display(), file_name);
+                            format!("{}/{}", full_job_path.as_path().display(), file_name);
                         GitManager::process_repo("", &file_path, uuid);
                     }
                 }
