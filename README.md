@@ -18,7 +18,7 @@ For more detail on quadlet see [this article](https://www.redhat.com/sysadmin/qu
 
 ## features
 
-`quadit` is a very opinionated reimplementation of the fantastic [fetchit](https://github.com/containers/fetchit) podman management system. 
+`quadit` is an opinionated reimplementation of the fantastic [fetchit](https://github.com/containers/fetchit) podman management system. 
 
 Please evaluate the following matrix to understand which one would better suit your needs.
 
@@ -26,13 +26,12 @@ Please evaluate the following matrix to understand which one would better suit y
 |---|---|---|---|
 |simple file transfer|yes|no|May be considered as a feature if required|
 |ansible|yes|no|Not a quadit goal|
-|kube|yes|no|Raw yaml files are not a quadit goal|
 |raw|yes|no|Not a quadit goal|
 |plain systemd files|yes|no|May be considered as a feature if required|
 |user quadlet|no|yes|Not available in fetchit [See fetchit issue](https://github.com/containers/fetchit/issues/311)|
 |root quadlet|no|no|May be considered as a feature if required|
 |systemd stop|no|yes|[Code exists](https://github.com/containers/fetchit/blob/main/method_containers/systemd/systemd-script#L51) in fetchit but not surfaced in config|
-|systemd start|no|yes|Not implemented in `fetchit`|
+|systemd start|no|yes|Not implemented in `fetchit` at time of writing|
 |auto-update|yes|no|quadit is targeting auto configuration but work is yet to commence|
 |.kube|no|yes|Standard quadlet file type|
 |.volume|no|yes|Standard quadlet file type|
@@ -57,30 +56,36 @@ systemctl --user start quadit
 ### environment variables
 None of these environment variables should need tweaking but the options are documented as they are available.
 
-|Name|Default|Description|
+|Name|Required|Default|Description|
 |---|---|---|
-|BOOT_URL|<Empty>|Bootstrap the service from remote `config.yaml` hosted at a url. Overrides the local `config.yaml`| 
-|LOCAL|'no'|If set to a 'yes' then the exe will assume it's not in a container and run with the local users configuration from $HOME and not use `/opt` locations| 
-|PODMAN_UNIT_PATH|`$HOME/.config/containers/systemd`|The location where the container files should be written on the host machine|
-|JOB_PATH|<Empty>|Left empty for testing but set to `/tmp` in the `quadit.container` file|
-|JOB_FOLDER|`jobs`|The name of the folder to save jobs.|
-|XDG_RUNTIME_DIR|`/run/user/%U`|Used by systemd to find a user-specific directory in which it can store small temporary files|
-|HOME|%u|Set by systemd parameter `%u` but can be overridden in the `quadit.container` file|
-|PODMAN_SYSTEMD_UNIT|%n|Set by systemd - the name of the unit|
-|LOG_LEVEL|`info`| Can be `error`, `warn`, `info`, `debug`, `trace`|
-|SYSTEMCTL_PATH|`/usr/bin/systemctl`|Path to the `systemctl` binary|
+|
+|BOOT_URL|NO|<Empty>|Bootstrap the service from remote `config.yaml` hosted at a url. Overrides the local `config.yaml`| 
+|LOCAL|NO|`no`|If set to a 'yes' then the exe will assume it's not in a container and run with the local users configuration for `$HOME` and not use `/opt` locations| 
+|LOG_LEVEL|NO|`info`| Can be `error`, `warn`, `info`, `debug`, `trace`|
+|JOB_PATH|NO|<Empty>|Left empty for testing but in deployment it's set to `/tmp` in the `quadit.container` file|
+|JOB_FOLDER|NO|`jobs`|The name of the folder to save jobs.|
+|PODMAN_UNIT_PATH|NO|`$HOME/.config/containers/systemd`|The location where the container files should be written on the host machine|
+|HOME|NO|%u|Set by systemd parameter `%u` but can be overridden in the `quadit.container` file|
+|XDG_RUNTIME_DIR|NO|`/run/user/%U`|Used by systemd to find a user-specific directory in which it can store small temporary files. Sometimes not available in headless environments
+|PODMAN_SYSTEMD_UNIT|NO|%n|Set by systemd - the name of the unit|
 
-## Supported Versions
+|SYSTEMCTL_PATH|NO|`/usr/bin/systemctl`|Path to the `systemctl` binary|
 
-* podman >= 4.8.3
-* fedora >= 39
-* Red Hat Enterprise Linux >= 8
+## Support
+
+This project is kindly sponsored by [Mehal Technologies](https://mehal.tech) and they offer commercial support for this software as well as providing cloud services to deliver advanced GitOps use cases. 
+
+The project follows latest in all downstream dependencies. 
+
+We won't intentionally break compatibility on new versions and we are happy to receive changes from the community to provide backwards compatibility but the project will prioritize new capabilities over backwards compatibility where a decision needs to be made.  
+
+The current list of downstream OS service dependencies is:  
+* podman >= 5.4.0
+* fedora >= 41
+* Red Hat Enterprise Linux >= 9
 * ubuntu >= 22.04
 
-## development service
-```
-cargo install quadit
-```
+**N.B This list is updated per release**
 
 ## License
 
