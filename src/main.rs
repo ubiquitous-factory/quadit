@@ -16,7 +16,7 @@ quadit running with root permissions
 This isn't currently supported and
 May lead to security problems and 
 undefined behaviour
-See 
+See https://github.com/ubiquitous-factory/quadit/issues/76
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 "#
         );
