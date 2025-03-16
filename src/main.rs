@@ -1,13 +1,27 @@
 use std::{env, str::FromStr};
 
 use anyhow::Result;
-use tracing::Level;
+use tracing::{warn, Level};
 use tracing_subscriber::FmtSubscriber;
 
 use quadit::service_manager::ServiceManager;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    if users::get_current_uid() == 0 {
+        warn!(
+            r#"
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+quadit running with root permissions
+This isn't currently supported and
+May lead to security problems and 
+undefined behaviour
+See 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+"#
+        );
+    }
+
     if dotenvy::dotenv().is_ok() {
         println!("Using .env")
     }
