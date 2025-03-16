@@ -329,7 +329,7 @@ impl FileManager {
         Ok(upath.as_path().display().to_string())
     }
 
-    fn podman_unit_path() -> &'static str {
+    pub fn podman_unit_path() -> &'static str {
         static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
         PODMAN_UNIT_PATH.get_or_init(|| {
             var("PODMAN_UNIT_PATH").unwrap_or(".config/containers/systemd".to_string())
@@ -355,6 +355,7 @@ impl FileManager {
 #[cfg(test)]
 mod tests {
     use std::{
+        env,
         fs::{self, File, OpenOptions},
         path::PathBuf,
     };
@@ -476,5 +477,20 @@ mod tests {
         let resp = FileManager::filename_to_unit_name(&original);
 
         assert_eq!(expected, resp.unwrap());
+    }
+
+    #[test]
+    fn test_default_podman_unit_location() {
+        assert_eq!(
+            FileManager::podman_unit_path(),
+            ".config/containers/systemd",
+            "Unexpected podman unit defaults"
+        );
+    }
+
+    #[test]
+    fn test_setting_boot_url() {
+        env::set_var("BOOT_URL", "iamset");
+        assert_eq!(FileManager::boot_url(), "iamset", "Unexpected boot url");
     }
 }
