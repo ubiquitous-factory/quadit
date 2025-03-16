@@ -6,7 +6,13 @@ use std::{
     sync::OnceLock,
 };
 
-use tracing::{debug, error, info, instrument};
+use tracing::instrument;
+
+#[cfg(test)]
+use std::{println as info, println as debug, println as error};
+#[cfg(not(test))]
+use tracing::{debug, error, info};
+
 use url::Url;
 
 const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "kube"];
@@ -14,13 +20,6 @@ const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "ku
 pub struct FileManager {}
 
 impl FileManager {
-    fn podman_unit_path() -> &'static str {
-        static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
-        PODMAN_UNIT_PATH.get_or_init(|| {
-            var("PODMAN_UNIT_PATH").unwrap_or(".config/containers/systemd".to_string())
-        })
-    }
-
     pub fn boot_url() -> &'static str {
         static BOOT_URL: OnceLock<String> = OnceLock::new();
         BOOT_URL.get_or_init(|| var("BOOT_URL").unwrap_or("".to_string()))
@@ -291,14 +290,26 @@ impl FileManager {
             );
             return Err(msg);
         }
-        let mut unit_deploy_path = FileManager::get_unit_path();
-        println!("repo_unit_path: {}", repo_unit_path);
-        unit_deploy_path.push(repo_unit_path);
-        //cont_path.push(path.file_name().unwrap_or_default());
-        println!("unit_deploy_path: {:#?}", unit_deploy_path);
-        println!("definition_path: {:#?}", definition_path);
 
-        let cpath = unit_deploy_path.clone();
+        let mut unit_deploy_path = FileManager::get_unit_path();
+        info!("repo_unit_path: {}", repo_unit_path);
+        unit_deploy_path.push(repo_unit_path);
+
+        info!("unit_deploy_path: {:#?}", &unit_deploy_path);
+        info!("definition_path: {:#?}", &definition_path);
+
+        match unit_deploy_path.parent() {
+            Some(s) => {
+                if fs::create_dir_all(s).is_err() {
+                    return Err(format!("Create Directory Failed: {:#?}", unit_deploy_path));
+                };
+            }
+            None => {
+                return Err(format!("Path format error: {:#?}", unit_deploy_path));
+            }
+        };
+
+        let upath = unit_deploy_path.clone();
         let dpath = definition_path.clone();
         match fs::copy(definition_path, unit_deploy_path) {
             Ok(_) => {}
@@ -306,7 +317,7 @@ impl FileManager {
                 let msg = format!(
                     "deploy_unit_file: Failed to copy {:?} to {:?}. {}",
                     dpath.to_str(),
-                    cpath.to_str(),
+                    upath.to_str(),
                     e
                 );
                 error!("{}", msg);
@@ -315,7 +326,14 @@ impl FileManager {
             }
         }
 
-        Ok(cpath.as_path().display().to_string())
+        Ok(upath.as_path().display().to_string())
+    }
+
+    fn podman_unit_path() -> &'static str {
+        static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
+        PODMAN_UNIT_PATH.get_or_init(|| {
+            var("PODMAN_UNIT_PATH").unwrap_or(".config/containers/systemd".to_string())
+        })
     }
 
     fn get_unit_path() -> PathBuf {
@@ -337,7 +355,7 @@ impl FileManager {
 #[cfg(test)]
 mod tests {
     use std::{
-        fs::{self, File},
+        fs::{self, File, OpenOptions},
         path::PathBuf,
     };
 
@@ -362,6 +380,7 @@ mod tests {
 
     #[test]
     fn test_deploy_unit_file() {
+        // Arrange
         let jobdir = "/tmp/test_deploy_container_file_job";
         let target_path = "test.container";
         fs::create_dir(jobdir).unwrap();
@@ -379,13 +398,75 @@ mod tests {
         let rm_file_path: PathBuf = [jobdir, "test.container"].iter().collect();
         File::create(file_path).unwrap();
 
-        let s = FileManager::deploy_unit_file(jobdir, target_path).unwrap();
+        // Act
+        let s: String = FileManager::deploy_unit_file(jobdir, target_path).unwrap();
         println!("{}", unit_path.as_path().display());
         println!("{}", s);
+
+        // Assert
         assert!(unit_path.exists());
+        let deployed_unit_path: PathBuf = [s].iter().collect();
+        assert!(deployed_unit_path.exists(), "Unit path wasn't deployed");
+
+        // Tidy
         fs::remove_file(rm_file_path).unwrap();
         fs::remove_dir(jobdir).unwrap();
         fs::remove_file(unit_path).unwrap();
+    }
+
+    #[test]
+
+    fn test_deploy_unit_folder_job() {
+        // Arrange
+        let jobdir = "/tmp/test_deploy_unit_folder_job";
+        let target_path = "samples/helloworld";
+        let full_job_folder = "/tmp/test_deploy_unit_folder_job/samples/helloworld";
+        let file_path: PathBuf = [jobdir, "samples/helloworld", "test.container"]
+            .iter()
+            .collect();
+        let rm_file_path: PathBuf = [jobdir, "samples/helloworld", "test.container"]
+            .iter()
+            .collect();
+
+        fs::create_dir_all(full_job_folder).unwrap();
+        File::create(&file_path).unwrap();
+        let mut unit_path = FileManager::get_unit_path();
+        if !unit_path.exists() {
+            let dir = unit_path.clone();
+            fs::create_dir_all(dir).unwrap_or_else(|why| {
+                error!("! {:?}", why.kind());
+            });
+        }
+        unit_path.push(target_path);
+
+        println!(
+            "Simulating downloaded file: {}",
+            &file_path.as_path().display()
+        );
+
+        let _ = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(file_path);
+
+        // Act
+        let s = FileManager::deploy_unit_file(jobdir, "samples/helloworld/test.container").unwrap();
+        println!("{}", unit_path.as_path().display());
+        println!("{}", s);
+
+        // Assert
+        assert!(unit_path.exists());
+        assert_eq!(
+            s,
+            "/opt/containers/samples/helloworld/test.container".to_string(),
+            "Deployed unit location is incorrect"
+        );
+        let deployed_unit_path: PathBuf = [s].iter().collect();
+        assert!(deployed_unit_path.exists(), "Unit path wasn't deployed");
+        // Clean Up
+        fs::remove_file(&rm_file_path).unwrap();
+        fs::remove_dir(full_job_folder).unwrap();
     }
 
     #[test]

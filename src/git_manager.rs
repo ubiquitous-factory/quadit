@@ -282,9 +282,21 @@ impl GitManager {
             match FileManager::get_files_in_directory(full_job_path.to_str().unwrap_or_default()) {
                 Ok(file_names) => {
                     for file_name in file_names {
-                        let file_path =
-                            format!("{}/{}", full_job_path.as_path().display(), file_name);
-                        GitManager::process_repo("", &file_path, uuid);
+                        // job_path is job_path
+                        let mut full_config_target_path = PathBuf::new();
+                        full_config_target_path.push(config_target_path);
+                        full_config_target_path.push(file_name);
+                        // let file_path =
+                        //     format!("{}/{}", full_config_target_path.as_path().display(), file_name);
+                        GitManager::process_repo(
+                            job_path,
+                            full_config_target_path
+                                .as_path()
+                                .display()
+                                .to_string()
+                                .as_str(),
+                            uuid,
+                        );
                     }
                 }
                 Err(e) => error!("{}: Error: {}", uuid, e),
