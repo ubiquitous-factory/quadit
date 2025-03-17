@@ -1,0 +1,12 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 60%    # the required coverage value
+        threshold: 1%  # the leniency in hitting the target
+    patch:
+      default:
+        informational: true
+  ignore:
+    - "tests"  # ignore tests themselves but who watches the watchmen ;)
+    - "**/main.rs" # ignore main as it's covered in units

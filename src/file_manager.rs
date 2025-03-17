@@ -6,7 +6,13 @@ use std::{
     sync::OnceLock,
 };
 
-use tracing::{debug, error, info, instrument};
+use tracing::instrument;
+
+#[cfg(test)]
+use std::{println as info, println as debug, println as error};
+#[cfg(not(test))]
+use tracing::{debug, error, info};
+
 use url::Url;
 
 const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "kube"];
@@ -14,13 +20,7 @@ const SUPPORTED_FILES: [&str; 5] = ["container", "volume", "pod", "network", "ku
 pub struct FileManager {}
 
 impl FileManager {
-    fn podman_unit_path() -> &'static str {
-        static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
-        PODMAN_UNIT_PATH.get_or_init(|| {
-            var("PODMAN_UNIT_PATH").unwrap_or(".config/containers/systemd".to_string())
-        })
-    }
-
+    /// Gets the boot url that's shared across the different threads in the service  
     pub fn boot_url() -> &'static str {
         static BOOT_URL: OnceLock<String> = OnceLock::new();
         BOOT_URL.get_or_init(|| var("BOOT_URL").unwrap_or("".to_string()))
@@ -188,15 +188,15 @@ impl FileManager {
     /// Currently `~/.config/containers/systemd/` but this may be expanded in later releases.
     /// # Arguments
     /// `job_path` - The path to the job - Usually `jobs/xxxxxxxx-xxxx-4xxx-Nxxx-xxxxxxxxxxxx`.
-    /// `target_path` - The path of the file in the git repo  
+    /// `unit_path` - The path of the file in the git repo  
     #[instrument(level = "trace")]
-    pub fn container_file_deployed(job_path: &str, target_path: &str) -> bool {
+    pub fn is_unit_file_deployed(job_path: &str, unit_path: &str) -> bool {
         let mut definition_path = PathBuf::new();
         definition_path.push(job_path);
-        definition_path.push(target_path);
+        definition_path.push(unit_path);
 
-        let path = Path::new(target_path);
-        let mut config_path = FileManager::get_container_path();
+        let path = Path::new(unit_path);
+        let mut config_path = FileManager::get_unit_path();
 
         config_path.push(path.file_name().unwrap_or_default());
 
@@ -272,14 +272,12 @@ impl FileManager {
     ///
     /// # Arguments
     /// `job_path` - The location that the repo has been copied to
-    /// `target_path` - The location of the .container file in the repo
+    /// `repo_unit_path` - The location of the .container file in the repo
     #[instrument(level = "trace")]
-    pub fn deploy_container_file(job_path: &str, target_path: &str) -> Result<String, String> {
-        let path = Path::new(target_path);
-
+    pub fn deploy_unit_file(job_path: &str, repo_unit_path: &str) -> Result<String, String> {
         let mut definition_path = PathBuf::new();
         definition_path.push(job_path);
-        definition_path.push(target_path);
+        definition_path.push(repo_unit_path);
         if !SUPPORTED_FILES.contains(
             &definition_path
                 .extension()
@@ -289,22 +287,38 @@ impl FileManager {
         ) {
             let msg = format!(
                 "File MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {}",
-                target_path
+                repo_unit_path
             );
             return Err(msg);
         }
-        let mut cont_path = FileManager::get_container_path();
-        cont_path.push(path.file_name().unwrap_or_default());
 
-        let cpath = cont_path.clone();
+        let mut unit_deploy_path = FileManager::get_unit_path();
+        info!("repo_unit_path: {}", repo_unit_path);
+        unit_deploy_path.push(repo_unit_path);
+
+        info!("unit_deploy_path: {:#?}", &unit_deploy_path);
+        info!("definition_path: {:#?}", &definition_path);
+
+        match unit_deploy_path.parent() {
+            Some(s) => {
+                if fs::create_dir_all(s).is_err() {
+                    return Err(format!("Create Directory Failed: {:#?}", unit_deploy_path));
+                };
+            }
+            None => {
+                return Err(format!("Path format error: {:#?}", unit_deploy_path));
+            }
+        };
+
+        let upath = unit_deploy_path.clone();
         let dpath = definition_path.clone();
-        match fs::copy(definition_path, cont_path) {
+        match fs::copy(definition_path, unit_deploy_path) {
             Ok(_) => {}
             Err(e) => {
                 let msg = format!(
-                    "Failed to copy {:?} to {:?}. {}",
+                    "deploy_unit_file: Failed to copy {:?} to {:?}. {}",
                     dpath.to_str(),
-                    cpath.to_str(),
+                    upath.to_str(),
                     e
                 );
                 error!("{}", msg);
@@ -313,10 +327,17 @@ impl FileManager {
             }
         }
 
-        Ok(cpath.as_path().display().to_string())
+        Ok(upath.as_path().display().to_string())
     }
 
-    fn get_container_path() -> PathBuf {
+    pub fn podman_unit_path() -> &'static str {
+        static PODMAN_UNIT_PATH: OnceLock<String> = OnceLock::new();
+        PODMAN_UNIT_PATH.get_or_init(|| {
+            var("PODMAN_UNIT_PATH").unwrap_or(".config/containers/systemd".to_string())
+        })
+    }
+
+    pub fn get_unit_path() -> PathBuf {
         if FileManager::is_local() == "yes" {
             let mut config_path = match dirs::home_dir() {
                 Some(p) => p,
@@ -329,67 +350,5 @@ impl FileManager {
             config_path.push("/opt/containers");
             config_path
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::{
-        fs::{self, File},
-        path::PathBuf,
-    };
-
-    use super::FileManager;
-
-    #[test]
-    fn test_are_identical() {
-        let file_name1 = "Cargo.toml";
-        let file_name2 = "Cargo.toml";
-
-        assert!(FileManager::are_identical(file_name1, file_name2));
-    }
-    #[test]
-    fn test_are_not_identical() {
-        let file_name1 = "README.md";
-        let file_name2 = "Cargo.toml";
-
-        assert!(!FileManager::are_identical(file_name1, file_name2));
-    }
-
-    #[test]
-    fn test_deploy_container_file() {
-        let jobdir = "/tmp/test_deploy_container_file_job";
-        let target_path = "test.container";
-        fs::create_dir(jobdir).unwrap();
-
-        let mut cont_path = FileManager::get_container_path();
-        if !cont_path.exists() {
-            let dir = cont_path.clone();
-            fs::create_dir_all(dir).unwrap_or_else(|why| {
-                println!("! {:?}", why.kind());
-            });
-        }
-        cont_path.push(target_path);
-
-        let file_path: PathBuf = [jobdir, "test.container"].iter().collect();
-        let rm_file_path: PathBuf = [jobdir, "test.container"].iter().collect();
-        File::create(file_path).unwrap();
-
-        let s = FileManager::deploy_container_file(jobdir, target_path).unwrap();
-        println!("{}", cont_path.as_path().display());
-        println!("{}", s);
-        assert!(cont_path.exists());
-        fs::remove_file(rm_file_path).unwrap();
-        fs::remove_dir(jobdir).unwrap();
-        fs::remove_file(cont_path).unwrap();
-    }
-
-    #[test]
-    fn test_container_file_to_unit_name() {
-        let original = "sample/test.container".to_string();
-        let expected = "test.service".to_string();
-        let resp = FileManager::filename_to_unit_name(&original);
-
-        assert_eq!(expected, resp.unwrap());
     }
 }

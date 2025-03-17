@@ -79,9 +79,6 @@ impl ServiceManager {
         if FileManager::boot_url().is_empty() {
             FileManager::from_url(FileManager::boot_url()).await?;
         }
-        // let serviceconf = FileManager::load_quadit_config()?;
-        // let quadit = QuaditManager::from_yaml(serviceconf).await?;
-        // quadit.start().await?;
         loop {
             std::thread::sleep(Duration::from_millis(100));
         }
