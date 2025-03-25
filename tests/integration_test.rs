@@ -13,7 +13,12 @@ mod test {
     use std::{env, path::PathBuf};
 
     use tokio_cron_scheduler::JobScheduler;
+
+    #[cfg(test)]
+    use std::println as info;
+    #[cfg(not(test))]
     use tracing::info;
+
     // Needs multi_thread to test, otherwise it hangs on scheduler.add()
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 
@@ -22,7 +27,7 @@ mod test {
         let uloc = "/tmp/quadit_test/.config/containers/systemd";
         env::set_var("JOB_PATH", "/tmp/quadit_test");
         env::set_var("PODMAN_UNIT_PATH", uloc);
-
+        env::set_var("LOCAL", "yes");
         fs::remove_dir_all(uloc).unwrap_or_default();
 
         fs::create_dir_all("/tmp/quadit_test/.config/containers/systemd").unwrap();
@@ -63,5 +68,12 @@ mod test {
         let mut p = PathBuf::new();
         p.push(uloc);
         assert!(p.exists());
+
+        let testfile =
+            "/tmp/quadit_test/.config/containers/systemd/samples/helloworld/hello.container";
+
+        let mut testfilepath = PathBuf::new();
+        testfilepath.push(testfile);
+        assert!(testfilepath.exists());
     }
 }

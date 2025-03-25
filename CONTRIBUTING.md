@@ -5,7 +5,7 @@
 If you are trying to use `quadit` and run into an issue- please file an
 issue! We'd love to get you up and running, even if the issue you have might
 not be directly related to the code in `quadit`. This tool seeks to make
-getting a project in Rust easy to start, so any sorts of feedback on usability,
+getting containers running on edge devices simple, so any sorts of feedback on usability,
 usecases, or other aspects of this general problem space are welcome!
 
 When filing an issue, do your best to be as specific as possible. Include
@@ -17,61 +17,47 @@ faster was can reproduce your issue, the faster we can fix it for you!
 
 ### Unit tests
 
-After writing your patch, or finishing an awesome feature, make sure that your
-code does not collides with the existing code, in executing the unit tests.
+After writing your patch, or finishing a feature, make sure that your
+code does not collides with the existing code by executing the unit tests.
 
-To execute the unit tests, we will use the `test` feature included in `cargo`:
+To execute the tests performed in the CI environment use the following features included in cargo:
 
 ```sh
 cargo test
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 `cargo test` will execute the unit tests included in the `tests` directory.
-If all the lights are green, you can then validate the manual tests.
+If all the lights are green then you will want to execute .
 
-### Manual tests
+`cargo fmt` will ensure all your code is formatted correctly. [See Configuring rustfmt](#configuring-rustfmt) for set up.
 
-For complex issues, and solutions, we did not created unit tests yet.
-Otherwise, we have manual tests in order to check if everything is ok.
+`cargo clippy` enforces Rust community best practices on code structure. 
 
-For example, to test if your code does not collides with the solution of the
-[issue #83], you have to run those tests locally:
+### Commits 
 
-**1. Clone an existing template, without any git submodule, locally**
+All commits **MUST** be signed with a [Developer Certificate of Origin](https://developercertificate.org/).
 
-You can take one at the [Templates page].
-For example:
-
-```sh
-cargo generate --git https://github.com/rustwasm/wasm-pack-template
+This is usually done by adding the `-s` flag to the commit command. 
+```
+git commit -s -m"feat: a rad feature"
 ```
 
-Once you tested the project has been correctly cloned and set, please to
-do the same with a template that contains git submodules.
+This isn't negotiable but if you forget to add it the error in the CI will provide guidance on how you can apply it retrospectively. 
 
-**2. Clone an existing template, with at least one git submodule, locally**
-
-For example:
-
-```sh
-cargo generate --git https://github.com/k0pernicus/cargo-template-test-submodule
-```
-
-Please check that the project has been correctly cloned and set, and check
-if the repository contains initialized submodules.
-
-**Your ideas/contributions are welcome to create automated tests for this** :)
+We like [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) and would encourage regular committers to use it.
 
 ## Submitting a PR
 
 If you are considering filing a pull request, make sure that there's an issue
 filed for the work you'd like to do. There might be some discussion required!
 Filing an issue first will help ensure that the work you put into your pull
-request will get merged :)
+request will get merged.
 
 Before you submit your pull request, check that you have completed all of the
 steps mentioned in the pull request template. Link the issue that your pull
-request is responding to, and format your code using [rustfmt][rustfmt].
+request is responding to, and run the commands outlined in the [unit test section](#unit-tests).
 
 ### Configuring rustfmt
 
