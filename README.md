@@ -6,7 +6,7 @@ A gitops tool to deploy systemd managed containers on linux. A.K.A quadlets.
 
 `quadit` is focused on managing [quadlets](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) and running containers in rootless mode using a gitops model.
 
-The `quadit`' core usecase is a `remote edge` scenario enforcing a pure pull model that ensures no inbound access to the device.   
+The `quadit` core usecase is a `remote edge` scenario enforcing a pure pull model that ensures no inbound access to the device.   
 
 It is written in rust to minimise the overall footprint and improve the power consumption of running a gitops service on low resourced systems.
 
@@ -40,6 +40,10 @@ Please evaluate the following matrix to understand which one would better suit y
 |.container|no|yes|Standard quadlet file type|
 
 ## install
+
+This example runs [a simple container](https://github.com/ubiquitous-factory/quadit/blob/main/samples/helloworld/hello.container#L7) that tails `/dev/null` to demonstrate how you automate the provisioning of containers through a yaml config file.
+
+Once you've seen the demo you will probably want to host the config file in your own repo rather than use this one so you can add additional services and test out how the GitOps aspects work when the `config.yaml` is updated.
 
 From the edge device running a systemd based distro with the latest podman the following commands:
 ```
