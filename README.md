@@ -57,8 +57,7 @@ systemctl --user start quadit
 None of these environment variables should need tweaking but the options are documented as they are available.
 
 |Name|Required|Default|Description|
-|---|---|---|
-|
+|---|---|---|---|
 |BOOT_URL|NO|<Empty>|Bootstrap the service from remote `config.yaml` hosted at a url. Overrides the local `config.yaml`| 
 |LOCAL|NO|`no`|If set to a 'yes' then the exe will assume it's not in a container and run with the local users configuration for `$HOME` and not use `/opt` locations| 
 |LOG_LEVEL|NO|`info`| Can be `error`, `warn`, `info`, `debug`, `trace`|
@@ -68,7 +67,6 @@ None of these environment variables should need tweaking but the options are doc
 |HOME|NO|%u|Set by systemd parameter `%u` but can be overridden in the `quadit.container` file|
 |XDG_RUNTIME_DIR|NO|`/run/user/%U`|Used by systemd to find a user-specific directory in which it can store small temporary files. Sometimes not available in headless environments
 |PODMAN_SYSTEMD_UNIT|NO|%n|Set by systemd - the name of the unit|
-
 |SYSTEMCTL_PATH|NO|`/usr/bin/systemctl`|Path to the `systemctl` binary|
 
 ## Support
