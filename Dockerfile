@@ -1,4 +1,4 @@
-FROM docker.io/fedora@sha256:d0207dbb078ee261852590b9a8f1ab1f8320547be79a2f39af9f3d23db33735e as build
+FROM docker.io/fedora@sha256:f84a7b765ce09163d11de44452a4b56c1b2f5571b6f640b3b973c6afc4e63212 as build
 
 RUN dnf install -y gcc openssl-devel && \
     rm -rf /var/cache/dnf && \
@@ -12,7 +12,7 @@ COPY ./src ./src
 COPY Cargo.toml  ./
 RUN cargo build --release
 
-FROM docker.io/fedora@sha256:d0207dbb078ee261852590b9a8f1ab1f8320547be79a2f39af9f3d23db33735e
+FROM docker.io/fedora@sha256:f84a7b765ce09163d11de44452a4b56c1b2f5571b6f640b3b973c6afc4e63212
 
 ENV container docker
 RUN dnf -y update; dnf clean all
