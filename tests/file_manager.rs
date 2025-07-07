@@ -47,7 +47,7 @@ mod tests {
         // Act
         let s: String = FileManager::deploy_unit_file(jobdir, target_path).unwrap();
         println!("{}", unit_path.as_path().display());
-        println!("{}", s);
+        println!("{s}");
 
         // Assert
         assert!(unit_path.exists());
@@ -99,7 +99,7 @@ mod tests {
         // Act
         let s = FileManager::deploy_unit_file(jobdir, "samples/helloworld/test.container").unwrap();
         println!("{}", unit_path.as_path().display());
-        println!("{}", s);
+        println!("{s}");
 
         // Assert
         assert!(unit_path.exists());

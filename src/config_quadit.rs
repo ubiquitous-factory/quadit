@@ -35,7 +35,7 @@ targetConfigs:
   schedule: "*/1 * * * *"
 "#;
         let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
-        println!("{:#?}", deser);
+        println!("{deser:#?}");
         assert_eq!(
             deser.target_configs[0].url,
             "https://github.com/ubiquitous-factory/quadit".to_string()
@@ -57,7 +57,7 @@ targetConfigs:
       schedule: "*/1 * * * *"
     "#;
         let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
-        println!("{:#?}", deser);
+        println!("{deser:#?}");
         assert_eq!(
             deser.target_configs[0].url,
             "https://github.com/ubiquitous-factory/quadit".to_string()
@@ -87,7 +87,7 @@ targetConfigs:
       schedule: "*/1 * * * *"
     "#;
         let deser: ConfigQuadit = ConfigQuadit::from_yaml(test_yaml.to_string()).unwrap();
-        println!("{:#?}", deser);
+        println!("{deser:#?}");
         assert_eq!(
             deser.target_configs[0].url,
             "https://github.com/ubiquitous-factory/quadit".to_string()
