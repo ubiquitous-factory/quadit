@@ -58,7 +58,7 @@ impl FileManager {
             // the folder might not have been created yet so lets to that
             let quadit_home = FileManager::quadit_home();
             fs::create_dir_all(quadit_home)?;
-            info!("Moving new config {} to {}", tmp_loc, unm_conf_location);
+            info!("Moving new config {tmp_loc} to {unm_conf_location}");
             fs::copy(tmp_loc, unm_conf_location)?;
             info!("Moved new config");
             return Ok(true);
@@ -95,7 +95,7 @@ impl FileManager {
     /// Simple wrapper around the `read_to_string`
     #[instrument(level = "trace")]
     pub fn readfile(file_path: String) -> Result<String, std::io::Error> {
-        info!("Loading: {}", file_path);
+        info!("Loading: {file_path}");
         fs::read_to_string(file_path)
     }
 
@@ -103,7 +103,7 @@ impl FileManager {
     #[instrument(level = "trace")]
     pub fn resolve_quadit_config_location() -> String {
         let loc = format!("{}/{}", FileManager::quadit_home(), "config.yaml");
-        info!("Using config location : {}", loc);
+        info!("Using config location : {loc}");
         loc
     }
 
@@ -128,8 +128,7 @@ impl FileManager {
                     Ok(s) => s,
                     Err(e) => {
                         error!(
-                            "couldn't find home or current directory \n {} \n going to try `./` ",
-                            e
+                            "couldn't find home or current directory \n {e} \n going to try `./` "
                         );
                         PathBuf::from("./")
                     }
@@ -169,8 +168,7 @@ impl FileManager {
                 .unwrap_or_default(),
         ) {
             let msg = format!(
-                "Target path MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {}",
-                target_path
+                "Target path MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {target_path}"
             );
             return Err(msg);
         }
@@ -286,14 +284,13 @@ impl FileManager {
                 .unwrap_or_default(),
         ) {
             let msg = format!(
-                "File MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {}",
-                repo_unit_path
+                "File MUST be a valid quadlet file. e.g. .container, .volume, .pod, .network, .kube.  Found: {repo_unit_path}"
             );
             return Err(msg);
         }
 
         let mut unit_deploy_path = FileManager::get_unit_path();
-        info!("repo_unit_path: {}", repo_unit_path);
+        info!("repo_unit_path: {repo_unit_path}");
         unit_deploy_path.push(repo_unit_path);
 
         info!("unit_deploy_path: {:#?}", &unit_deploy_path);
@@ -302,11 +299,11 @@ impl FileManager {
         match unit_deploy_path.parent() {
             Some(s) => {
                 if fs::create_dir_all(s).is_err() {
-                    return Err(format!("Create Directory Failed: {:#?}", unit_deploy_path));
+                    return Err(format!("Create Directory Failed: {unit_deploy_path:#?}"));
                 };
             }
             None => {
-                return Err(format!("Path format error: {:#?}", unit_deploy_path));
+                return Err(format!("Path format error: {unit_deploy_path:#?}"));
             }
         };
 
@@ -321,7 +318,7 @@ impl FileManager {
                     upath.to_str(),
                     e
                 );
-                error!("{}", msg);
+                error!("{msg}");
 
                 return Err(msg);
             }

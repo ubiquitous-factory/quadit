@@ -43,7 +43,7 @@ See https://github.com/ubiquitous-factory/quadit/issues/76
 async fn svc() -> Result<(), anyhow::Error> {
     if env::args().collect::<Vec<_>>().len() != 1 {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
-        println!("quadit Server Edition v{}", VERSION);
+        println!("quadit Server Edition v{VERSION}");
         println!("This process accepts no arguments.");
         println!("See documentation https://github.com/ubiquitous-factory/quadit/");
     } else {
