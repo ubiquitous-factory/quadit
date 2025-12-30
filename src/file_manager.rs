@@ -226,7 +226,7 @@ impl FileManager {
             .filter_map(|entry| {
                 let path = entry.ok()?.path();
                 if path.is_file() {
-                    path.file_name()?.to_str().map(|s| (s.to_owned()))
+                    path.file_name()?.to_str().map(|s| s.to_owned())
                 } else {
                     None
                 }
